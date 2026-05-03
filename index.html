@@ -48,7 +48,7 @@ let state = {
   social:50,
   love:0,
   children:0,
-flags:{}
+  flags:{},
   job:null,
   phase:"student",
 
@@ -62,10 +62,17 @@ flags:{}
 // フェーズ
 // ======================
 function updatePhase(){
-  if(state.age<18) state.phase="student";
-  else if(state.age<23 && state.job==="大学生") state.phase="college";
-  else if(state.age<23 && !state.job) state.phase="career";
-  else state.phase="adult";
+
+  if(state.age<18){
+    state.phase="student";
+  }
+  else if(state.age<23 && state.job==="大学生"){
+    state.phase="college";
+  }
+  else{
+    state.phase="adult";
+  }
+
 }
 
 // ======================
