@@ -1,23 +1,49 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Another Your Life</title>
 
 <style>
 body{
- background:#111;color:#fff;font-family:sans-serif;padding:20px;
+  background:#111;
+  color:#fff;
+  font-family:sans-serif;
+  padding:20px;
 }
+
+h2{margin-bottom:20px;}
+
 .card{
- background:#1c1c1c;padding:20px;border-radius:12px;margin:10px 0;
+  background:#1c1c1c;
+  padding:20px;
+  margin-bottom:15px;
+  border-radius:10px;
 }
+
+input{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  margin-bottom:10px;
+}
+
 button{
- width:100%;padding:14px;margin:6px 0;
- border:none;border-radius:8px;background:#2d7ef7;color:#fff;
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:6px;
+  background:#3b82f6;
+  color:white;
+  font-size:16px;
 }
-.bad{background:#400;}
-.good{background:#042;}
+
+.good{ background:#042; }
+.bad{ background:#400; }
 </style>
+
 </head>
 
 <body>
@@ -25,23 +51,31 @@ button{
 <h2>Another Your Life</h2>
 
 <div class="card" id="setup">
-<h3>あなたの名前</h3>
-<input id="name" placeholder="例：太郎" style="width:100%;padding:12px">
-<button onclick="startGame()">開始</button>
+  あなたの名前
+  <input id="name" placeholder="例：田中">
+  <button onclick="startGame()">開始</button>
 </div>
 
-<div class="card" id="stats"></div>
-<div class="card" id="event">人生が始まる...</div>
+<div class="card" id="stats" style="display:none;"></div>
+<div class="card" id="event" style="display:none;">人生が始まる...</div>
 <div id="choices"></div>
 
 <button onclick="share()">シェア</button>
 
-<audio id="bgmLight" src="" loop></audio>
-<audio id="bgmDark" src="" loop></audio>
-
 <script>
-function startGame(){
-  state.name = document.querySelector("input").value;
+
+let state={
+  name:"",
+  age:18,
+  money:50,
+  social:50,
+  luck:50,
+  history:[]
+};
+
+window.startGame = function(){
+
+  state.name = document.getElementById("name").value || "あなた";
 
   document.getElementById("setup").style.display="none";
   document.getElementById("stats").style.display="block";
@@ -49,67 +83,65 @@ function startGame(){
 
   nextEvent();
 }
-let state={
- name:"",
- age:18,
- money:50,
- social:50,
- luck:50,
- history:[],
- energy:10
-};
-
-
-
-function updateStats(e){
- for(let k in e){
-  state[k]+=e[k];
- }
-}
 
 function renderStats(){
- document.getElementById("stats").innerText=
- `${state.name}｜年齢:${state.age} 資産:${state.money} 社会:${state.social}`;
+  document.getElementById("stats").innerText =
+    `${state.name}｜年齢:${state.age} 資産:${state.money} 社会:${state.social}`;
 }
 
 function renderChoices(arr){
- const div=document.getElementById("choices");
- div.innerHTML="";
+  const div=document.getElementById("choices");
+  div.innerHTML="";
 
- arr.forEach(o=>{
-  const b=document.createElement("button");
-  b.innerText=o.text;
-  b.onclick=()=>{
-   state.history.push(o.text);
-   updateStats(o.effect);
-   nextEvent();
-  };
-  div.appendChild(b);
- });
+  arr.forEach(o=>{
+    const b=document.createElement("button");
+    b.innerText=o.text;
+    b.onclick=()=>{
+      updateStats(o.effect);
+      nextEvent();
+    };
+    div.appendChild(b);
+  });
+}
+
+function updateStats(e){
+  for(let k in e){
+    state[k]+=e[k];
+  }
 }
 
 async function nextEvent(){
 
-  state.age+=3;
+  state.age += 3;
 
-  document.getElementById("event").innerText="人生を生成中...";
+  document.getElementById("event").innerText="人生生成中...";
 
-  const r = await fetch("/api/event",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(state)
-  });
+  try{
+    const r = await fetch("/api/event",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(state)
+    });
 
-  const e = await r.json();
+    const e = await r.json();
 
-  document.getElementById("event").innerText = e.event;
+    document.getElementById("event").innerText = e.event;
 
-  renderChoices(e.choices);
-  renderStats();
+    renderChoices(e.choices);
+    renderStats();
 
-  if(e.tone==="bad"){
-    document.body.className="bad";
-  }else{
-    document.body.className="good";
+    document.body.className = e.tone==="bad" ? "bad" : "good";
+
+  }catch{
+    document.getElementById("event").innerText = "エラー発生";
   }
 }
+
+function share(){
+  alert(`${state.name}の人生｜資産:${state.money}`);
+}
+
+</script>
+
+</body>
+</html>
