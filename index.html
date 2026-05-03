@@ -42,21 +42,6 @@ button{
 // ======================
 // STATE
 // ======================
-let state = {
-  age:15,
-  money:50,
-  social:50,
-  love:0,
-  children:0,
-  flags:{},
-  job:null,
-  phase:"student",
-
-  partner:null,
-  married:false,
-
-  hp:100 // 生存力
-};
 
 // ======================
 // フェーズ
@@ -70,7 +55,20 @@ function updatePhase(){
     state.phase="college";
   }
   else{
-    state.phase="adult";
+    state.phase=let state = {
+  age:15,
+  money:50,
+  social:50,
+  love:0,
+  children:0,
+  flags:{},
+  job:null,
+  phase:"student",
+  partner:null,
+  married:false,
+  hp:100
+};
+    "adult";
   }
 
 }
