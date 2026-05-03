@@ -3,34 +3,21 @@ export default async function handler(req, res) {
     const s = req.body;
 
     const prompt = `
-あなたは人生シミュレーションゲームのイベント生成AIです。
+人生ゲームのイベントを作れ。
 
-以下の人物に対して、
-「必ず変化があるイベント」と「選択肢3つ」を作ってください。
+必ずJSONのみで返せ。
 
-【条件】
-・何も起きないは禁止
-・イベントは1〜2文
-・選択肢ごとに結果が変わる
-・effectは -5〜+5 の整数
-・必ずJSONのみ出力
-
-【人物】
-名前:${s.name}
-年齢:${s.age}
-資産:${s.money}
-社会:${s.social}
-
-【出力形式】
 {
- "event":"...",
+ "event":"出来事",
  "tone":"good|neutral|bad",
  "choices":[
-  {"text":"...", "effect":{"money":0,"social":0,"luck":0}},
-  {"text":"...", "effect":{"money":0,"social":0,"luck":0}},
-  {"text":"...", "effect":{"money":0,"social":0,"luck":0}}
+  {"text":"行動1","effect":{"money":0,"social":0,"luck":0}},
+  {"text":"行動2","effect":{"money":0,"social":0,"luck":0}},
+  {"text":"行動3","effect":{"money":0,"social":0,"luck":0}}
  ]
 }
+
+何も起きないは禁止。
 `;
 
     const r = await fetch("https://api.openai.com/v1/responses", {
@@ -47,72 +34,55 @@ export default async function handler(req, res) {
 
     const data = await r.json();
 
+    // 🔥 安全にテキスト取得（これが重要）
     let text = "";
 
-    if (data.output_text) {
+    if (typeof data.output_text === "string") {
       text = data.output_text;
-    } else if (data.output?.[0]?.content?.[0]?.text) {
-      text = data.output[0].content[0].text;
+    } else if (Array.isArray(data.output)) {
+      text = data.output
+        .flatMap(o => o.content || [])
+        .map(c => c.text || "")
+        .join("");
     }
 
-    // ▼ JSON抽出（壊れても拾う）
+    // 🔥 JSON抽出
     const match = text.match(/\{[\s\S]*\}/);
 
     if (match) {
       try {
         const json = JSON.parse(match[0]);
 
-        // ▼ 安全補正（壊れ対策）
-        if (!json.event) json.event = "思わぬ出来事が起きた";
-        if (!json.tone) json.tone = "neutral";
-        if (!Array.isArray(json.choices)) {
-          json.choices = [];
-        }
-
-        // ▼ choicesが足りない時の補完
-        while (json.choices.length < 3) {
-          json.choices.push({
-            text: "様子を見る",
-            effect: { money: 0, social: 0, luck: 0 }
-          });
-        }
-
         res.status(200).json(json);
         return;
 
-      } catch {
-        // JSON壊れてた場合
+      } catch (e) {
+        console.log("JSON parse失敗", e);
       }
     }
 
-    // ▼ fallback（絶対止まらない）
+    // 🔥 fallback（絶対止まらない）
     res.status(200).json({
-      event: text || "突然、予想外の出来事が起きた",
+      event: "予想外の出来事が起きた",
       tone: "neutral",
       choices: [
         { text: "行動する", effect: { money: 2, social: 1, luck: 1 } },
-        { text: "慎重に様子を見る", effect: { money: 0, social: 0, luck: 1 } },
+        { text: "様子を見る", effect: { money: 0, social: 0, luck: 1 } },
         { text: "無視する", effect: { money: -1, social: -1, luck: 0 } }
       ]
     });
 
   } catch (e) {
-    console.error(e);
+    console.error("完全エラー:", e);
 
     res.status(200).json({
-      event: "重大なトラブルが発生した",
+      event: "大きなトラブルが起きた",
       tone: "bad",
       choices: [
-        { text: "対処する", effect: { money: -2, social: 0, luck: 1 } },
+        { text: "対処する", effect: { money: -2, social: 1, luck: 1 } },
         { text: "逃げる", effect: { money: -1, social: -2, luck: 0 } },
         { text: "誰かに頼る", effect: { money: -1, social: 2, luck: 1 } }
       ]
     });
   }
 }
-if (e.tone === "good") body.className = "good";
-if (e.tone === "bad") body.className = "bad";
-if (Math.random() < 0.05) {
-  event = "人生が大きく変わる出来事が起きた";
-}
-state.history.push(event);
