@@ -396,7 +396,8 @@ const EVENTS=[
       }
     }
   ]
-},
+},  // ← ★これが超重要（カンマ！！）
+
 {
   id:"relationship_crisis",
   priority:95,
@@ -412,12 +413,12 @@ const EVENTS=[
     {
       text:"修復を試みる",
       effect:(s)=>{
-        if(Math.random() < 0.6){
-          s.love += 15;
+        if(Math.random() < 0.5){
+          s.love += 20;
+          s.flags.crisisResolved = true;
         }else{
           s.love -= 10;
         }
-        s.flags.crisisResolved = true;
       }
     },
     {
@@ -426,9 +427,16 @@ const EVENTS=[
         s.love -= 5;
         s.flags.crisisResolved = true;
       }
+    },
+    {
+      text:"別れる",
+      effect:(s)=>{
+        s.partner = null;
+        s.love = 0;
+      }
     }
   ]
-}
+},
   ];
 
 // ======================
