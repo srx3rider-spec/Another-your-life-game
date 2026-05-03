@@ -59,11 +59,7 @@ let state={
  energy:10
 };
 
-function startGame(){
- state.name=document.getElementById("name").value||"あなた";
- document.getElementById("setup").style.display="none";
- nextEvent();
-}
+
 
 function updateStats(e){
  for(let k in e){
