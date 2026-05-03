@@ -159,32 +159,38 @@ function getEvent(){
     ]
   };
 }
-
 function nextEvent(){
 
-  state.age+=3;
+  state.age += 1; // ←1歳ずつ
 
-  const death=checkDeath();
-  if(death){
-    document.getElementById("event").innerText="人生を終えた";
-    document.getElementById("choices").innerHTML="";
+  if(checkDeath()){
+    document.getElementById("event").innerText = "人生を終えた";
+    document.getElementById("choices").innerHTML = "";
     return;
   }
 
-  const e=getEvent();
+  const e = getEvent();
 
   state.history.push(e.event);
 
-  document.getElementById("event").innerText=e.event;
+  document.getElementById("event").innerText = e.event;
 
   renderChoices(e.choices);
   renderStats();
 }
 
 function checkDeath(){
-  if(Math.random()<state.age/120){
-    return true;
-  }
+
+  // 年齢別死亡率（かなり緩やか）
+  let rate = 0;
+
+  if(state.age < 40) rate = 0.001;
+  else if(state.age < 60) rate = 0.005;
+  else if(state.age < 70) rate = 0.02;
+  else if(state.age < 80) rate = 0.05;
+  else rate = 0.1;
+
+  return Math.random() < rate;
 }
 
 function getZodiac(date){
