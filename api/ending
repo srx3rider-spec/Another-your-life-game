@@ -1,0 +1,14 @@
+export default function handler(req,res){
+
+  const titles=[
+    "波乱万丈な人生",
+    "静かな人生",
+    "成功者",
+    "孤独な旅人"
+  ];
+
+  res.status(200).json({
+    title:titles[Math.floor(Math.random()*titles.length)],
+    summary:"様々な出来事を経験しながら人生を歩んだ。"
+  });
+}
