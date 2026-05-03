@@ -37,18 +37,22 @@ JSON形式で返す：
       })
     });
 
-   const data = await r.json();
+  const data = await r.json();
 
 const text = data.output_text;
 
-res.status(200).json(JSON.parse(text));
-
-} catch (e) {
-  console.error(e);
-
+// 🔥ここを変更
+try {
+  res.status(200).json(JSON.parse(text));
+} catch {
+  // JSONじゃなかった場合のフォールバック
   res.status(200).json({
-    event: "エラー（AI応答失敗）",
+    event: text,
     tone: "neutral",
-    choices: []
+    choices: [
+      { text: "続ける", effect: { money: 0, social: 0, luck: 0 } }
+    ]
+  });
+}
   });
 }
