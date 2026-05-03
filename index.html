@@ -84,71 +84,22 @@ function renderChoices(arr){
  });
 }
 
-function nextEvent(){
+async function nextEvent(){
 
- if(state.energy<=0){
-  document.getElementById("event").innerText="ここから先は有料構想（仮）";
-  return;
- }
+  state.age+=3;
 
- state.energy--;
- state.age+=3;
+  const r = await fetch("/api/event",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(state)
+  });
 
- const e = generateEvent();
+  const e = await r.json();
 
- document.getElementById("event").innerText=e.text;
- renderChoices(e.choices);
- renderStats();
+  document.getElementById("event").innerText=e.event;
+  renderChoices(e.choices);
+  renderStats();
 
- if(e.tone==="bad") document.body.className="bad";
- else document.body.className="good";
+  if(e.tone==="bad") document.body.className="bad";
+  else document.body.className="good";
 }
-
-function generateEvent(){
-
- const events=[
-
- {
- text:`${state.name}は会社を辞めるか迷っている`,
- tone:"bad",
- choices:[
-  {text:"安定を選ぶ",effect:{money:10}},
-  {text:"挑戦する",effect:{money:-10,luck:10}},
-  {text:"何もしない",effect:{social:-5}}
- ]
- },
-
- {
- text:`${state.name}は一人の女性と出会った`,
- tone:"good",
- choices:[
-  {text:"積極的に関わる",effect:{social:10}},
-  {text:"距離を保つ",effect:{social:-5}},
-  {text:"無視する",effect:{luck:-5}}
- ]
- },
-
- {
- text:`${state.name}は大きなチャンスを掴むか迷っている`,
- tone:"bad",
- choices:[
-  {text:"挑戦",effect:{money:-5,luck:15}},
-  {text:"安全",effect:{money:10}},
-  {text:"逃げる",effect:{social:-10}}
- ]
- }
-
- ];
-
- return events[Math.floor(Math.random()*events.length)];
-}
-
-function share(){
- const text=`${state.name}の人生→資産${state.money}`;
- alert(text);
-}
-
-</script>
-
-</body>
-</html>
