@@ -39,8 +39,13 @@ JSON形式で返す：
 
     const data = await r.json();
 
-    const text = data.output[0].content[0].text;
+    let text = "";
 
+if(data.output_text){
+  text = data.output_text;
+}else{
+  text = data.output?.[0]?.content?.[0]?.text || "";
+}
     res.status(200).json(JSON.parse(text));
 
   } catch (e) {
