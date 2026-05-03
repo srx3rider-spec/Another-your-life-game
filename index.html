@@ -2,7 +2,6 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Another Your Life</title>
 
 <style>
@@ -10,54 +9,80 @@ body{background:#111;color:#fff;font-family:sans-serif;padding:20px;}
 .card{background:#1c1c1c;padding:20px;margin-bottom:10px;border-radius:10px;}
 button{width:100%;padding:10px;margin-top:5px;background:#3b82f6;border:none;color:#fff;}
 </style>
-
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 
 <body>
 
 <h2>Another Your Life</h2>
 
+<!-- 初期設定 -->
 <div class="card" id="setup">
-  名前
-  <input id="name">
-  <button onclick="startGame()">開始</button>
+  名前<br>
+  <input id="name"><br><br>
+
+  年齢<br>
+  <input type="number" id="age" min="0" max="80" value="18"><br><br>
+
+  性別<br>
+  <select id="gender">
+    <option value="male">男性</option>
+    <option value="female">女性</option>
+  </select><br><br>
+
+  生年月日<br>
+  <input type="date" id="birth"><br><br>
+
+  血液型<br>
+  <select id="blood">
+    <option>A</option>
+    <option>B</option>
+    <option>O</option>
+    <option>AB</option>
+  </select><br><br>
+
+  <button onclick="startGame()">人生開始</button>
 </div>
 
 <div class="card" id="stats" style="display:none;"></div>
 <div class="card" id="event" style="display:none;"></div>
 <div id="choices"></div>
 
-<div class="card" id="ending" style="display:none;">
-  <h3 id="endingTitle"></h3>
-  <p id="endingSummary"></p>
-  <button onclick="shareX()">X投稿</button>
-  <button onclick="downloadImage()">画像保存</button>
-  <button onclick="location.reload()">やり直し</button>
-</div>
-
 <script>
+
 let state={
   name:"",
   age:18,
   money:50,
   social:50,
   luck:50,
-  history:[],
-  alive:true
+  gender:"",
+  birth:"",
+  blood:"",
+  zodiac:"",
+  phase:"",
+  history:[]
 };
 
 function startGame(){
+
   state.name=document.getElementById("name").value||"あなた";
+  state.age=parseInt(document.getElementById("age").value);
+  state.gender=document.getElementById("gender").value;
+  state.birth=document.getElementById("birth").value;
+  state.blood=document.getElementById("blood").value;
+
+  state.zodiac = getZodiac(state.birth);
+
   document.getElementById("setup").style.display="none";
   document.getElementById("stats").style.display="block";
   document.getElementById("event").style.display="block";
+
   nextEvent();
 }
 
 function renderStats(){
-  document.getElementById("stats").innerText=
-  `${state.name}｜${state.age}歳 金:${state.money} 社会:${state.social}`;
+  document.getElementById("stats").innerText =
+    `${state.name}｜${state.age}歳｜${state.zodiac}｜${state.blood}型｜金:${state.money} 社会:${state.social}`;
 }
 
 function renderChoices(arr){
@@ -74,61 +99,115 @@ function renderChoices(arr){
   });
 }
 
-async function nextEvent(){
+function getPhase(){
+  if(state.age<12) return "child";
+  if(state.age<18) return "student";
+  if(state.age<30) return "young";
+  if(state.age<60) return "adult";
+  return "old";
+}
+
+function getEvent(){
+
+  const phase=getPhase();
+
+  if(phase=="child"){
+    return {
+      event:"友達と遊んだ",
+      choices:[
+        {text:"仲良くする",effect:{social:+2}},
+        {text:"一人で遊ぶ",effect:{luck:+1}}
+      ]
+    };
+  }
+
+  if(phase=="student"){
+    return {
+      event:"進路に悩んでいる",
+      choices:[
+        {text:"勉強する",effect:{social:+2}},
+        {text:"遊ぶ",effect:{luck:+2}}
+      ]
+    };
+  }
+
+  if(phase=="young"){
+    return {
+      event:"就職か挑戦か迷っている",
+      choices:[
+        {text:"就職",effect:{money:+5}},
+        {text:"挑戦",effect:{luck:+5}}
+      ]
+    };
+  }
+
+  if(phase=="adult"){
+    return {
+      event:"仕事で大きな決断を迫られた",
+      choices:[
+        {text:"挑戦",effect:{money:+10}},
+        {text:"安定",effect:{social:+5}}
+      ]
+    };
+  }
+
+  return {
+    event:"老後の時間をどう使うか",
+    choices:[
+      {text:"穏やかに過ごす",effect:{luck:+5}},
+      {text:"新しい挑戦",effect:{social:+5}}
+    ]
+  };
+}
+
+function nextEvent(){
 
   state.age+=3;
 
   const death=checkDeath();
-  if(death){ showEnding(death); return; }
+  if(death){
+    document.getElementById("event").innerText="人生を終えた";
+    document.getElementById("choices").innerHTML="";
+    return;
+  }
 
-  document.getElementById("event").innerText="人生生成中...";
-
-  const r=await fetch("/api/event",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(state)});
-  const e=await r.json();
+  const e=getEvent();
 
   state.history.push(e.event);
 
   document.getElementById("event").innerText=e.event;
+
   renderChoices(e.choices);
   renderStats();
 }
 
 function checkDeath(){
   if(Math.random()<state.age/120){
-    return {event:"人生を終えた"};
+    return true;
   }
 }
 
-async function showEnding(death){
+function getZodiac(date){
+  if(!date) return "不明";
 
-  state.alive=false;
+  const d=new Date(date);
+  const m=d.getMonth()+1;
+  const day=d.getDate();
 
-  const r=await fetch("/api/ending",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(state)});
-  const data=await r.json();
-
-  document.getElementById("event").style.display="none";
-  document.getElementById("choices").style.display="none";
-  document.getElementById("stats").style.display="none";
-
-  document.getElementById("endingTitle").innerText=data.title;
-  document.getElementById("endingSummary").innerText=data.summary;
-
-  window.shareText=`私の人生：${data.title}\n${data.summary}\n#AnotherYourLife`;
-
-  document.getElementById("ending").style.display="block";
+  if((m==3&&day>=21)||(m==4&&day<=19)) return "牡羊座";
+  if((m==4&&day>=20)||(m==5&&day<=20)) return "牡牛座";
+  if((m==5&&day>=21)||(m==6&&day<=21)) return "双子座";
+  if((m==6&&day>=22)||(m==7&&day<=22)) return "蟹座";
+  if((m==7&&day>=23)||(m==8&&day<=22)) return "獅子座";
+  if((m==8&&day>=23)||(m==9&&day<=22)) return "乙女座";
+  if((m==9&&day>=23)||(m==10&&day<=23)) return "天秤座";
+  if((m==10&&day>=24)||(m==11&&day<=22)) return "蠍座";
+  if((m==11&&day>=23)||(m==12&&day<=21)) return "射手座";
+  if((m==12&&day>=22)||(m==1&&day<=19)) return "山羊座";
+  if((m==1&&day>=20)||(m==2&&day<=18)) return "水瓶座";
+  return "魚座";
 }
 
-function shareX(){
-  window.open("https://twitter.com/intent/tweet?text="+encodeURIComponent(window.shareText));
-}
-
-async function downloadImage(){
-  const canvas=await html2canvas(document.getElementById("ending"));
-  const link=document.createElement("a");
-  link.download="life.png";
-  link.href=canvas.toDataURL();
-  link.click();
-}
 </script>
 
 </body>
