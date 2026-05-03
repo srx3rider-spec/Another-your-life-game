@@ -5,163 +5,192 @@
 <title>Another Your Life</title>
 
 <style>
-body{background:#111;color:#fff;font-family:sans-serif;padding:20px;}
-.card{background:#1c1c1c;padding:20px;margin-bottom:10px;border-radius:10px;}
-button{width:100%;padding:10px;margin-top:5px;background:#3b82f6;border:none;color:#fff;}
+body {
+  background:#0b3d2e;
+  color:white;
+  font-family:sans-serif;
+  padding:20px;
+}
+.card {
+  background:#1a1a1a;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+button {
+  width:100%;
+  padding:12px;
+  margin:5px 0;
+  border:none;
+  border-radius:8px;
+  background:#3b82f6;
+  color:white;
+  font-size:16px;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Another Your Life</h2>
+<h1>Another Your Life</h1>
 
-<!-- 初期設定 -->
-<div class="card" id="setup">
-  名前<br>
-  <input id="name"><br><br>
-
-  年齢<br>
-  <input type="number" id="age" min="0" max="80" value="18"><br><br>
-
-  性別<br>
-  <select id="gender">
-    <option value="male">男性</option>
-    <option value="female">女性</option>
-  </select><br><br>
-
-  生年月日<br>
-  <input type="date" id="birth"><br><br>
-
-  血液型<br>
-  <select id="blood">
-    <option>A</option>
-    <option>B</option>
-    <option>O</option>
-    <option>AB</option>
-  </select><br><br>
-
-  <button onclick="startGame()">人生開始</button>
-</div>
-
-<div class="card" id="stats" style="display:none;"></div>
-<div class="card" id="event" style="display:none;"></div>
+<div id="status" class="card"></div>
+<div id="event" class="card"></div>
 <div id="choices"></div>
 
 <script>
 
-let state={
-  name:"",
-  age:18,
-  money:50,
-  social:50,
-  luck:50,
-  gender:"",
-  birth:"",
-  blood:"",
-  zodiac:"",
-  phase:"",
-  history:[]
+// ========================
+// 状態
+// ========================
+let state = {
+  age: 15,
+  money: 50,
+  social: 50,
+  phase: "student",
+  job: null,
+  alive: true
 };
 
-function startGame(){
-
-  state.name=document.getElementById("name").value||"あなた";
-  state.age=parseInt(document.getElementById("age").value);
-  state.gender=document.getElementById("gender").value;
-  state.birth=document.getElementById("birth").value;
-  state.blood=document.getElementById("blood").value;
-
-  state.zodiac = getZodiac(state.birth);
-
-  document.getElementById("setup").style.display="none";
-  document.getElementById("stats").style.display="block";
-  document.getElementById("event").style.display="block";
-
-  nextEvent();
+// ========================
+// ステータス表示
+// ========================
+function renderStatus(){
+  document.getElementById("status").innerText =
+    `年齢:${state.age} 金:${state.money} 社会:${state.social}`;
 }
 
-function renderStats(){
-  document.getElementById("stats").innerText =
-    `${state.name}｜${state.age}歳｜${state.zodiac}｜${state.blood}型｜金:${state.money} 社会:${state.social}`;
+// ========================
+// フェーズ判定
+// ========================
+function updatePhase(){
+
+  if(state.age <= 12) state.phase = "child";
+  else if(state.age <= 18) state.phase = "student";
+  else if(state.age <= 22) state.phase = "career";
+  else if(state.age <= 30) state.phase = "young";
+  else if(state.age <= 60) state.phase = "adult";
+  else state.phase = "old";
 }
 
-function renderChoices(arr){
-  const div=document.getElementById("choices");
-  div.innerHTML="";
-  arr.forEach(o=>{
-    const b=document.createElement("button");
-    b.innerText=o.text;
-    b.onclick=()=>{
-      for(let k in o.effect){ state[k]+=o.effect[k]; }
-      nextEvent();
-    };
-    div.appendChild(b);
-  });
+// ========================
+// 死亡判定
+// ========================
+function checkDeath(){
+
+  let rate = 0;
+
+  if(state.age < 50) rate = 0.001;
+  else if(state.age < 70) rate = 0.01;
+  else if(state.age < 80) rate = 0.05;
+  else rate = 0.15;
+
+  return Math.random() < rate;
 }
 
-function getPhase(){
-  if(state.age<12) return "child";
-  if(state.age<18) return "student";
-  if(state.age<30) return "young";
-  if(state.age<60) return "adult";
-  return "old";
-}
-
+// ========================
+// イベント生成
+// ========================
 function getEvent(){
 
-  const phase=getPhase();
-
-  if(phase=="child"){
+  // 学生
+  if(state.phase === "student"){
     return {
-      event:"友達と遊んだ",
+      text: "学校生活、どうする？",
       choices:[
-        {text:"仲良くする",effect:{social:+2}},
-        {text:"一人で遊ぶ",effect:{luck:+1}}
+        {text:"勉強する", effect:()=>{state.social+=2}},
+        {text:"遊ぶ", effect:()=>{state.social+=1}},
+        {text:"恋愛する", effect:()=>{state.social+=3}}
       ]
     };
   }
 
-  if(phase=="student"){
+  // 進路決定（超重要）
+  if(state.phase === "career"){
     return {
-      event:"進路に悩んでいる",
+      text:"進路を決める時期だ",
       choices:[
-        {text:"勉強する",effect:{social:+2}},
-        {text:"遊ぶ",effect:{luck:+2}}
+        {text:"就職する", effect:()=>{state.job="会社員"; state.money+=10}},
+        {text:"大学へ進学", effect:()=>{state.money-=10}},
+        {text:"フリーターになる", effect:()=>{state.money-=5}},
+        {text:"起業する", effect:()=>{state.money+=Math.random()*20-10}}
       ]
     };
   }
 
-  if(phase=="young"){
+  // 若年期
+  if(state.phase === "young"){
     return {
-      event:"就職か挑戦か迷っている",
+      text:"人生が動き出す",
       choices:[
-        {text:"就職",effect:{money:+5}},
-        {text:"挑戦",effect:{luck:+5}}
+        {text:"仕事に集中", effect:()=>{state.money+=10}},
+        {text:"恋愛する", effect:()=>{state.social+=10}},
+        {text:"転職する", effect:()=>{state.money+=Math.random()*20-5}}
       ]
     };
   }
 
-  if(phase=="adult"){
+  // 成人期
+  if(state.phase === "adult"){
     return {
-      event:"仕事で大きな決断を迫られた",
+      text:"人生の中盤",
       choices:[
-        {text:"挑戦",effect:{money:+10}},
-        {text:"安定",effect:{social:+5}}
+        {text:"安定を取る", effect:()=>{state.money+=5}},
+        {text:"挑戦する", effect:()=>{state.money+=20}},
+        {text:"家庭優先", effect:()=>{state.social+=10}}
+      ]
+    };
+  }
+
+  // 老後
+  if(state.phase === "old"){
+    return {
+      text:"老後の時間",
+      choices:[
+        {text:"穏やかに過ごす", effect:()=>{}},
+        {text:"趣味に生きる", effect:()=>{state.social+=5}},
+        {text:"回想する", effect:()=>{}}
       ]
     };
   }
 
   return {
-    event:"老後の時間をどう使うか",
+    text:"何も起きなかった",
     choices:[
-      {text:"穏やかに過ごす",effect:{luck:+5}},
-      {text:"新しい挑戦",effect:{social:+5}}
+      {text:"次へ", effect:()=>{}}
     ]
   };
 }
-function nextEvent(){
 
-  state.age += 1; // ←1歳ずつ
+// ========================
+// 選択肢表示
+// ========================
+function renderChoices(choices){
+
+  const div = document.getElementById("choices");
+  div.innerHTML = "";
+
+  choices.forEach(c=>{
+    const b = document.createElement("button");
+    b.innerText = c.text;
+
+    b.onclick = ()=>{
+      c.effect();
+      next();
+    };
+
+    div.appendChild(b);
+  });
+}
+
+// ========================
+// 次のターン
+// ========================
+function next(){
+
+  state.age++;
+
+  updatePhase();
 
   if(checkDeath()){
     document.getElementById("event").innerText = "人生を終えた";
@@ -171,48 +200,17 @@ function nextEvent(){
 
   const e = getEvent();
 
-  state.history.push(e.event);
-
-  document.getElementById("event").innerText = e.event;
+  document.getElementById("event").innerText = e.text;
 
   renderChoices(e.choices);
-  renderStats();
+  renderStatus();
 }
 
-function checkDeath(){
-
-  // 年齢別死亡率（かなり緩やか）
-  let rate = 0;
-
-  if(state.age < 40) rate = 0.001;
-  else if(state.age < 60) rate = 0.005;
-  else if(state.age < 70) rate = 0.02;
-  else if(state.age < 80) rate = 0.05;
-  else rate = 0.1;
-
-  return Math.random() < rate;
-}
-
-function getZodiac(date){
-  if(!date) return "不明";
-
-  const d=new Date(date);
-  const m=d.getMonth()+1;
-  const day=d.getDate();
-
-  if((m==3&&day>=21)||(m==4&&day<=19)) return "牡羊座";
-  if((m==4&&day>=20)||(m==5&&day<=20)) return "牡牛座";
-  if((m==5&&day>=21)||(m==6&&day<=21)) return "双子座";
-  if((m==6&&day>=22)||(m==7&&day<=22)) return "蟹座";
-  if((m==7&&day>=23)||(m==8&&day<=22)) return "獅子座";
-  if((m==8&&day>=23)||(m==9&&day<=22)) return "乙女座";
-  if((m==9&&day>=23)||(m==10&&day<=23)) return "天秤座";
-  if((m==10&&day>=24)||(m==11&&day<=22)) return "蠍座";
-  if((m==11&&day>=23)||(m==12&&day<=21)) return "射手座";
-  if((m==12&&day>=22)||(m==1&&day<=19)) return "山羊座";
-  if((m==1&&day>=20)||(m==2&&day<=18)) return "水瓶座";
-  return "魚座";
-}
+// ========================
+// 初期起動
+// ========================
+renderStatus();
+next();
 
 </script>
 
