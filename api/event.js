@@ -37,26 +37,18 @@ JSON形式で返す：
       })
     });
 
-    const data = await r.json();
+   const data = await r.json();
 
-    let text = "";
+const text = data.output_text;
 
-if(data.output_text){
-  text = data.output_text;
-}else{
-  text = data.output?.[0]?.content?.[0]?.text || "";
-}
-    res.status(200).json(JSON.parse(text));
+res.status(200).json(JSON.parse(text));
 
-  } catch (e) {
+} catch (e) {
+  console.error(e);
 
-    console.error(e);
-
-    res.status(200).json({
-      event: "エラー（AI応答失敗）",
-      tone: "neutral",
-      choices: []
-    });
-
-  }
+  res.status(200).json({
+    event: "エラー（AI応答失敗）",
+    tone: "neutral",
+    choices: []
+  });
 }
