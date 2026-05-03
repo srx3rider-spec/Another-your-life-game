@@ -46,16 +46,10 @@ button{
 // ======================
 // フェーズ
 // ======================
-function updatePhase(){
-
-  if(state.age<18){
-    state.phase="student";
-  }
-  else if(state.age<23 && state.job==="大学生"){
-    state.phase="college";
-  }
-  else{
-    state.phase=let state = {
+// ======================
+// STATE（上に1回だけ置く）
+// ======================
+let state = {
   age:15,
   money:50,
   social:50,
@@ -68,7 +62,20 @@ function updatePhase(){
   married:false,
   hp:100
 };
-    "adult";
+
+// ======================
+// フェーズ判定
+// ======================
+function updatePhase(){
+
+  if(state.age < 18){
+    state.phase = "student";
+  }
+  else if(state.age < 23 && state.job === "大学生"){
+    state.phase = "college";
+  }
+  else{
+    state.phase = "adult";
   }
 
 }
