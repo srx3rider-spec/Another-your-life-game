@@ -1,8 +1,8 @@
 export default async function handler(req, res) {
+  try {
+    const s = req.body;
 
-  const s = req.body;
-
-  const prompt = `
+    const prompt = `
 人生シミュレーションを生成せよ。
 
 名前:${s.name}
@@ -10,22 +10,19 @@ export default async function handler(req, res) {
 資産:${s.money}
 社会:${s.social}
 
-JSON形式で返す：
-
+JSON形式で出力:
 {
-  "event":"文章",
-  "tone":"good or bad",
-  "choices":[
-    {"text":"選択1","effect":{"money":0,"social":0,"luck":0}},
-    {"text":"選択2","effect":{"money":0,"social":0,"luck":0}},
-    {"text":"選択3","effect":{"money":0,"social":0,"luck":0}}
-  ]
+ "event":"...",
+ "tone":"good|neutral|bad",
+ "choices":[
+  {"text":"...", "effect":{"money":0,"social":0,"luck":0}},
+  {"text":"...", "effect":{"money":0,"social":0,"luck":0}},
+  {"text":"...", "effect":{"money":0,"social":0,"luck":0}}
+ ]
 }
 `;
 
-  try {
-
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+    const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -37,22 +34,36 @@ JSON形式で返す：
       })
     });
 
-  const data = await r.json();
+    const data = await r.json();
 
-const text = data.output_text;
+    // ★ここが重要（安全に取り出す）
+    let text = "";
 
-// 🔥ここを変更
-try {
-  res.status(200).json(JSON.parse(text));
-} catch {
-  // JSONじゃなかった場合のフォールバック
-  res.status(200).json({
-    event: text,
-    tone: "neutral",
-    choices: [
-      { text: "続ける", effect: { money: 0, social: 0, luck: 0 } }
-    ]
-  });
-}
-  });
+    if (data.output_text) {
+      text = data.output_text;
+    } else if (data.output?.[0]?.content?.[0]?.text) {
+      text = data.output[0].content[0].text;
+    }
+
+    // JSON変換（失敗防止）
+    try {
+      const json = JSON.parse(text);
+      res.status(200).json(json);
+    } catch {
+      res.status(200).json({
+        event: "エラー（AI応答解析失敗）",
+        tone: "neutral",
+        choices: []
+      });
+    }
+
+  } catch (e) {
+    console.error(e);
+
+    res.status(200).json({
+      event: "エラー（API失敗）",
+      tone: "neutral",
+      choices: []
+    });
+  }
 }
