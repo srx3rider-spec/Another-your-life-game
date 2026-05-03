@@ -10,7 +10,8 @@ export default async function handler(req, res) {
 資産:${s.money}
 社会:${s.social}
 
-JSON形式で出力:
+必ずJSONのみ出力。他の文章は禁止。
+
 {
  "event":"...",
  "tone":"good|neutral|bad",
@@ -36,7 +37,7 @@ JSON形式で出力:
 
     const data = await r.json();
 
-    // ★ここが重要（安全に取り出す）
+    // ▼ 安全にテキスト取り出し
     let text = "";
 
     if (data.output_text) {
@@ -45,13 +46,15 @@ JSON形式で出力:
       text = data.output[0].content[0].text;
     }
 
-    // JSON変換（失敗防止）
-    try {
-      const json = JSON.parse(text);
+    // ▼ JSON部分だけ抽出
+    const match = text.match(/\{[\s\S]*\}/);
+
+    if (match) {
+      const json = JSON.parse(match[0]);
       res.status(200).json(json);
-    } catch {
+    } else {
       res.status(200).json({
-        event: "エラー（AI応答解析失敗）",
+        event: "エラー（JSON抽出失敗）",
         tone: "neutral",
         choices: []
       });
