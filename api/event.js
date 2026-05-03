@@ -2,17 +2,19 @@ export default async function handler(req, res) {
 
   const s = req.body;
 
-  const prompt = `
-人生シミュレーションを生成せよ。
+const prompt = `
+あなたは「人生シミュレーションエンジン」です。
 
-名前:${s.name}
-年齢:${s.age}
-資産:${s.money}
-社会:${s.social}
+以下の人物の人生を、リアルかつドラマ性を持って生成してください。
 
-現実的で感情が動くイベントを1つ作れ。
+条件：
+・ありきたり禁止
+・感情と葛藤を必ず入れる
+・現実的だが予想外の展開
+・短くても印象的に（1〜2行）
 
-JSONで返せ:
+出力はJSONのみ：
+
 {
  "event":"",
  "tone":"good|neutral|bad",
@@ -22,26 +24,13 @@ JSONで返せ:
   {"text":"","effect":{"money":0,"social":0,"luck":0}}
  ]
 }
+
+人物：
+名前:${s.name}
+年齢:${s.age}
+資産:${s.money}
+社会性:${s.social}
+運:${s.luck}
 `;
+  
 
-  const r = await fetch("https://api.openai.com/v1/chat/completions", {
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "Authorization":`Bearer ${process.env.OPENAI_API_KEY}`
-    },
-    body:JSON.stringify({
-      model:"gpt-4o-mini",
-      messages:[{role:"user",content:prompt}]
-    })
-  });
-
-  const data = await r.json();
-  const txt = data.choices[0].message.content;
-
-  try{
-    res.json(JSON.parse(txt));
-  }catch{
-    res.json({event:"エラー",tone:"neutral",choices:[]});
-  }
-}
