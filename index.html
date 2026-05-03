@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Another Your Life</title>
+
+<style>
+body{
+ background:#111;color:#fff;font-family:sans-serif;padding:20px;
+}
+.card{
+ background:#1c1c1c;padding:20px;border-radius:12px;margin:10px 0;
+}
+button{
+ width:100%;padding:14px;margin:6px 0;
+ border:none;border-radius:8px;background:#2d7ef7;color:#fff;
+}
+.bad{background:#400;}
+.good{background:#042;}
+</style>
+</head>
+
+<body>
+
+<h2>Another Your Life</h2>
+
+<div class="card" id="setup">
+<h3>あなたの名前</h3>
+<input id="name" placeholder="例：太郎" style="width:100%;padding:12px">
+<button onclick="startGame()">開始</button>
+</div>
+
+<div class="card" id="stats"></div>
+<div class="card" id="event">人生が始まる...</div>
+<div id="choices"></div>
+
+<button onclick="share()">シェア</button>
+
+<audio id="bgmLight" src="" loop></audio>
+<audio id="bgmDark" src="" loop></audio>
+
+<script>
+
+let state={
+ name:"",
+ age:18,
+ money:50,
+ social:50,
+ luck:50,
+ history:[],
+ energy:10
+};
+
+function startGame(){
+ state.name=document.getElementById("name").value||"あなた";
+ document.getElementById("setup").style.display="none";
+ nextEvent();
+}
+
+function updateStats(e){
+ for(let k in e){
+  state[k]+=e[k];
+ }
+}
+
+function renderStats(){
+ document.getElementById("stats").innerText=
+ `${state.name}｜年齢:${state.age} 資産:${state.money} 社会:${state.social}`;
+}
+
+function renderChoices(arr){
+ const div=document.getElementById("choices");
+ div.innerHTML="";
+
+ arr.forEach(o=>{
+  const b=document.createElement("button");
+  b.innerText=o.text;
+  b.onclick=()=>{
+   state.history.push(o.text);
+   updateStats(o.effect);
+   nextEvent();
+  };
+  div.appendChild(b);
+ });
+}
+
+function nextEvent(){
+
+ if(state.energy<=0){
+  document.getElementById("event").innerText="ここから先は有料構想（仮）";
+  return;
+ }
+
+ state.energy--;
+ state.age+=3;
+
+ const e = generateEvent();
+
+ document.getElementById("event").innerText=e.text;
+ renderChoices(e.choices);
+ renderStats();
+
+ if(e.tone==="bad") document.body.className="bad";
+ else document.body.className="good";
+}
+
+function generateEvent(){
+
+ const events=[
+
+ {
+ text:`${state.name}は会社を辞めるか迷っている`,
+ tone:"bad",
+ choices:[
+  {text:"安定を選ぶ",effect:{money:10}},
+  {text:"挑戦する",effect:{money:-10,luck:10}},
+  {text:"何もしない",effect:{social:-5}}
+ ]
+ },
+
+ {
+ text:`${state.name}は一人の女性と出会った`,
+ tone:"good",
+ choices:[
+  {text:"積極的に関わる",effect:{social:10}},
+  {text:"距離を保つ",effect:{social:-5}},
+  {text:"無視する",effect:{luck:-5}}
+ ]
+ },
+
+ {
+ text:`${state.name}は大きなチャンスを掴むか迷っている`,
+ tone:"bad",
+ choices:[
+  {text:"挑戦",effect:{money:-5,luck:15}},
+  {text:"安全",effect:{money:10}},
+  {text:"逃げる",effect:{social:-10}}
+ ]
+ }
+
+ ];
+
+ return events[Math.floor(Math.random()*events.length)];
+}
+
+function share(){
+ const text=`${state.name}の人生→資産${state.money}`;
+ alert(text);
+}
+
+</script>
+
+</body>
+</html>
