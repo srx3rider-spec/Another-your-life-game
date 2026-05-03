@@ -6,44 +6,12 @@
 <title>Another Your Life</title>
 
 <style>
-body{
-  background:#111;
-  color:#fff;
-  font-family:sans-serif;
-  padding:20px;
-}
-
-h2{margin-bottom:20px;}
-
-.card{
-  background:#1c1c1c;
-  padding:20px;
-  margin-bottom:15px;
-  border-radius:10px;
-}
-
-input{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  margin-bottom:10px;
-}
-
-button{
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  border:none;
-  border-radius:6px;
-  background:#3b82f6;
-  color:white;
-  font-size:16px;
-}
-
-.good{ background:#042; }
-.bad{ background:#400; }
+body{background:#111;color:#fff;font-family:sans-serif;padding:20px;}
+.card{background:#1c1c1c;padding:20px;margin-bottom:10px;border-radius:10px;}
+button{width:100%;padding:10px;margin-top:5px;background:#3b82f6;border:none;color:#fff;}
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 
 <body>
@@ -51,96 +19,116 @@ button{
 <h2>Another Your Life</h2>
 
 <div class="card" id="setup">
-  あなたの名前
-  <input id="name" placeholder="例：田中">
+  名前
+  <input id="name">
   <button onclick="startGame()">開始</button>
 </div>
 
 <div class="card" id="stats" style="display:none;"></div>
-<div class="card" id="event" style="display:none;">人生が始まる...</div>
+<div class="card" id="event" style="display:none;"></div>
 <div id="choices"></div>
 
-<button onclick="share()">シェア</button>
+<div class="card" id="ending" style="display:none;">
+  <h3 id="endingTitle"></h3>
+  <p id="endingSummary"></p>
+  <button onclick="shareX()">X投稿</button>
+  <button onclick="downloadImage()">画像保存</button>
+  <button onclick="location.reload()">やり直し</button>
+</div>
 
 <script>
-
 let state={
   name:"",
   age:18,
   money:50,
   social:50,
   luck:50,
-  history:[]
+  history:[],
+  alive:true
 };
 
-window.startGame = function(){
-
-  state.name = document.getElementById("name").value || "あなた";
-
+function startGame(){
+  state.name=document.getElementById("name").value||"あなた";
   document.getElementById("setup").style.display="none";
   document.getElementById("stats").style.display="block";
   document.getElementById("event").style.display="block";
-
   nextEvent();
 }
 
 function renderStats(){
-  document.getElementById("stats").innerText =
-    `${state.name}｜年齢:${state.age} 資産:${state.money} 社会:${state.social}`;
+  document.getElementById("stats").innerText=
+  `${state.name}｜${state.age}歳 金:${state.money} 社会:${state.social}`;
 }
 
 function renderChoices(arr){
   const div=document.getElementById("choices");
   div.innerHTML="";
-
   arr.forEach(o=>{
     const b=document.createElement("button");
     b.innerText=o.text;
     b.onclick=()=>{
-      updateStats(o.effect);
+      for(let k in o.effect){ state[k]+=o.effect[k]; }
       nextEvent();
     };
     div.appendChild(b);
   });
 }
 
-function updateStats(e){
-  for(let k in e){
-    state[k]+=e[k];
-  }
-}
-
 async function nextEvent(){
 
-  state.age += 3;
+  state.age+=3;
+
+  const death=checkDeath();
+  if(death){ showEnding(death); return; }
 
   document.getElementById("event").innerText="人生生成中...";
 
-  try{
-    const r = await fetch("/api/event",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(state)
-    });
+  const r=await fetch("/api/event",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(state)});
+  const e=await r.json();
 
-    const e = await r.json();
+  state.history.push(e.event);
 
-    document.getElementById("event").innerText = e.event;
+  document.getElementById("event").innerText=e.event;
+  renderChoices(e.choices);
+  renderStats();
+}
 
-    renderChoices(e.choices);
-    renderStats();
-
-    document.body.className = e.tone==="bad" ? "bad" : "good";
-
-  }catch{
-    document.getElementById("event").innerText = "エラー発生";
+function checkDeath(){
+  if(Math.random()<state.age/120){
+    return {event:"人生を終えた"};
   }
 }
 
-function share(){
-  alert(`${state.name}の人生｜資産:${state.money}`);
+async function showEnding(death){
+
+  state.alive=false;
+
+  const r=await fetch("/api/ending",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(state)});
+  const data=await r.json();
+
+  document.getElementById("event").style.display="none";
+  document.getElementById("choices").style.display="none";
+  document.getElementById("stats").style.display="none";
+
+  document.getElementById("endingTitle").innerText=data.title;
+  document.getElementById("endingSummary").innerText=data.summary;
+
+  window.shareText=`私の人生：${data.title}\n${data.summary}\n#AnotherYourLife`;
+
+  document.getElementById("ending").style.display="block";
 }
 
+function shareX(){
+  window.open("https://twitter.com/intent/tweet?text="+encodeURIComponent(window.shareText));
+}
+
+async function downloadImage(){
+  const canvas=await html2canvas(document.getElementById("ending"));
+  const link=document.createElement("a");
+  link.download="life.png";
+  link.href=canvas.toDataURL();
+  link.click();
+}
 </script>
 
 </body>
