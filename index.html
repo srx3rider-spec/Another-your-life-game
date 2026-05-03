@@ -45,55 +45,134 @@ button{
 let state = {
   age:15,
   money:50,
+  social:50,
   love:0,
   children:0,
+
+  job:null,
+  phase:"student",
+
   partner:null,
   married:false,
-  job:null,
-  phase:"student"
+
+  hp:100 // 生存力
 };
 
 // ======================
+// フェーズ
+// ======================
 function updatePhase(){
   if(state.age<18) state.phase="student";
-  else if(state.age<23) state.phase="career";
+  else if(state.age<23 && state.job==="大学生") state.phase="college";
+  else if(state.age<23 && !state.job) state.phase="career";
   else state.phase="adult";
 }
 
 // ======================
+// パートナー生成
+// ======================
 function createPartner(){
-  const names=["あや","ゆい","さき"];
+  const names=["あや","ゆい","さき","みき"];
   return {name:names[Math.floor(Math.random()*names.length)]};
 }
 
 // ======================
+// イベント
+// ======================
 const EVENTS=[
 
+// ----------------
+// 初期
+// ----------------
 {
   id:"start",
   priority:100,
   condition:s=>s.age===15,
-  text:"これからの人生をどうする？",
+  text:"高校生活スタート",
   choices:[
-    {text:"勉強する",effect:s=>{s.money+=5}},
+    {text:"勉強",effect:s=>{s.social+=5}},
     {text:"遊ぶ",effect:s=>{s.love+=5}}
   ]
 },
 
+// ----------------
+// 進路（18歳固定）
+// ----------------
+{
+  id:"career",
+  priority:200,
+  condition:s=>s.age===18 && !s.job,
+  text:"進路を決める",
+  choices:[
+    {text:"大学進学",effect:s=>{s.job="大学生"; s.money-=10}},
+    {text:"就職",effect:s=>{s.job="会社員"; s.money+=10}},
+    {text:"フリーター",effect:s=>{s.job="フリーター"}}
+  ]
+},
+
+// ----------------
+// 大学生活
+// ----------------
+{
+  id:"college",
+  priority:50,
+  condition:s=>s.job==="大学生" && s.age<=22,
+  text:"大学生活",
+  choices:[
+    {text:"勉強",effect:s=>{s.social+=5}},
+    {text:"遊ぶ",effect:s=>{s.love+=5}},
+    {text:"サボる",effect:s=>{s.money-=5}}
+  ]
+},
+
+// ----------------
+// 卒業
+// ----------------
+{
+  id:"graduate",
+  priority:150,
+  condition:s=>s.job==="大学生" && s.age===22,
+  text:"卒業後どうする？",
+  choices:[
+    {text:"就職",effect:s=>{s.job="会社員"; s.money+=20}},
+    {text:"フリーター",effect:s=>{s.job="フリーター"}}
+  ]
+},
+
+// ----------------
+// 仕事
+// ----------------
+{
+  id:"work",
+  priority:40,
+  condition:s=>s.job==="会社員",
+  text:"仕事の日",
+  choices:[
+    {text:"働く",effect:s=>{s.money+=10}},
+    {text:"サボる",effect:s=>{s.social-=5}}
+  ]
+},
+
+// ----------------
+// 出会い
+// ----------------
 {
   id:"meet",
-  priority:50,
+  priority:60,
   condition:s=>!s.partner && s.age>=18,
-  text:"気になる人と出会った",
+  text:"出会いがあった",
   choices:[
     {text:"話す",effect:s=>{s.partner=createPartner(); s.love=30}},
     {text:"無視",effect:s=>{}}
   ]
 },
 
+// ----------------
+// 恋愛
+// ----------------
 {
   id:"love",
-  priority:40,
+  priority:50,
   condition:s=>s.partner && !s.married,
   text:s=>`${s.partner.name}と過ごしている`,
   choices:[
@@ -102,9 +181,12 @@ const EVENTS=[
   ]
 },
 
+// ----------------
+// 結婚
+// ----------------
 {
   id:"marry",
-  priority:60,
+  priority:100,
   condition:s=>s.partner && s.love>=80 && !s.married,
   text:"結婚する？",
   choices:[
@@ -113,39 +195,51 @@ const EVENTS=[
   ]
 },
 
+// ----------------
+// 子供
+// ----------------
 {
   id:"child",
-  priority:55,
-  condition:s=>s.married && s.children===0 && Math.random()<0.3,
+  priority:80,
+  condition:s=>s.married && Math.random()<0.3,
   text:"子供が生まれた",
   choices:[
-    {text:"育てる",effect:s=>{s.children++}},
-    {text:"放置",effect:s=>{}}
+    {text:"育てる",effect:s=>{s.children++; s.money-=10}},
+    {text:"負担",effect:s=>{s.hp-=10}}
   ]
 },
 
+// ----------------
+// 事故
+// ----------------
 {
-  id:"career",
-  priority:45,
-  condition:s=>s.phase==="career" && !s.job,
-  text:"進路を決める",
+  id:"accident",
+  priority:120,
+  condition:s=>Math.random()<0.05,
+  text:"事故にあった",
   choices:[
-    {text:"就職",effect:s=>{s.job="会社員"; s.money+=10}},
-    {text:"フリーター",effect:s=>{s.money-=5}}
+    {text:"軽傷",effect:s=>{s.hp-=10}},
+    {text:"重傷",effect:s=>{s.hp-=30}}
   ]
 },
 
+// ----------------
+// 病気
+// ----------------
 {
-  id:"work",
-  priority:20,
-  condition:s=>s.job==="会社員",
-  text:"仕事の日",
+  id:"illness",
+  priority:110,
+  condition:s=>Math.random()<0.05,
+  text:"病気になった",
   choices:[
-    {text:"働く",effect:s=>{s.money+=5}},
-    {text:"サボる",effect:s=>{}}
+    {text:"治療",effect:s=>{s.money-=10; s.hp-=5}},
+    {text:"放置",effect:s=>{s.hp-=20}}
   ]
 },
 
+// ----------------
+// 日常
+// ----------------
 {
   id:"daily",
   priority:1,
@@ -159,6 +253,8 @@ const EVENTS=[
 ];
 
 // ======================
+// イベント選択
+// ======================
 function pickEvent(){
   const valid=EVENTS.filter(e=>e.condition(state));
   valid.sort((a,b)=>b.priority-a.priority);
@@ -166,9 +262,31 @@ function pickEvent(){
 }
 
 // ======================
+// 死亡判定
+// ======================
+function checkDeath(){
+  if(state.hp<=0) return true;
+
+  let rate=0;
+  if(state.age<50) rate=0.001;
+  else if(state.age<70) rate=0.01;
+  else rate=0.05;
+
+  return Math.random()<rate;
+}
+
+// ======================
+// 実行
+// ======================
 function run(){
 
   updatePhase();
+
+  if(checkDeath()){
+    document.getElementById("event").innerText="人生を終えた";
+    document.getElementById("choices").innerHTML="";
+    return;
+  }
 
   const e=pickEvent();
 
@@ -190,7 +308,7 @@ function run(){
   });
 
   document.getElementById("status").innerText=
-    `年齢:${state.age} 金:${state.money} 愛:${state.love} 子:${state.children}`;
+    `年齢:${state.age} 金:${state.money} 愛:${state.love} 子:${state.children} HP:${state.hp}`;
 }
 
 // ======================
