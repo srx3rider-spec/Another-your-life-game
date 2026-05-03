@@ -377,29 +377,59 @@ const EVENTS=[
 
 // 修復 or 崩壊
 {
+{
   id:"relationship_break",
-  priority:110,
-  condition:s=>s.partner && s.love<20,
-  text:"関係が限界に近い",
+  priority:80,
+
+  condition:(s)=>
+    s.partner &&
+    s.love <= 0,
+
+  text:(s)=> `${s.partner.name}と別れることになった`,
+
   choices:[
     {
-      text:"修復を試みる",
-      effect:s=>{
-        s.love+=15;
-        s.flags.cheating=false;
-      }
-    },
-    {
-      text:"別れる",
-      effect:s=>{
-        s.partner=null;
-        s.love=0;
-        s.flags={};
+      text:"受け入れる",
+      effect:(s)=>{
+        s.partner = null;
+        s.love = 0;
       }
     }
   ]
 }
-];
+{
+  id:"relationship_crisis",
+  priority:95,
+
+  condition:(s)=>
+    s.partner &&
+    !s.flags.crisisResolved &&
+    s.love < 30,
+
+  text:(s)=> `${s.partner.name}との関係が限界に近い`,
+
+  choices:[
+    {
+      text:"修復を試みる",
+      effect:(s)=>{
+        if(Math.random() < 0.6){
+          s.love += 15;
+        }else{
+          s.love -= 10;
+        }
+        s.flags.crisisResolved = true;
+      }
+    },
+    {
+      text:"距離を置く",
+      effect:(s)=>{
+        s.love -= 5;
+        s.flags.crisisResolved = true;
+      }
+    }
+  ]
+}
+  ];
 
 // ======================
 // イベント選択
@@ -419,7 +449,26 @@ function checkDeath(){
   let rate=0;
   if(state.age<50) rate=0.001;
   else if(state.age<70) rate=0.01;
-  else rate=0.05;
+  else rate=0.05;{
+  id:"relationship_break",
+  priority:80,
+
+  condition:(s)=>
+    s.partner &&
+    s.love <= 0,
+
+  text:(s)=> `${s.partner.name}と別れることになった`,
+
+  choices:[
+    {
+      text:"受け入れる",
+      effect:(s)=>{
+        s.partner = null;
+        s.love = 0;
+      }
+    }
+  ]
+}
 
   return Math.random()<rate;
 }
