@@ -249,7 +249,144 @@ const EVENTS=[
     {text:"過ごす",effect:s=>{}}
   ]
 }
+// =====================
+// 恋愛チェーン開始
+// =====================
 
+// 別の出会い
+{
+  id:"sub_meet",
+  priority:90,
+  condition:s=>s.partner && !s.flags?.subLove && Math.random()<0.2,
+  text:"別の気になる人と出会った",
+  choices:[
+    {
+      text:"興味を持つ",
+      effect:s=>{
+        if(!s.flags) s.flags={};
+        s.flags.subLove=true;
+      }
+    },
+    {
+      text:"スルー",
+      effect:s=>{}
+    }
+  ]
+},
+
+// ちょっかい
+{
+  id:"flirt",
+  priority:85,
+  condition:s=>s.flags?.subLove && !s.flags.flirting,
+  text:"少し距離を縮める機会があった",
+  choices:[
+    {
+      text:"ちょっかいを出す",
+      effect:s=>{
+        s.flags.flirting=true;
+      }
+    },
+    {
+      text:"やめておく",
+      effect:s=>{
+        s.flags.subLove=false;
+      }
+    }
+  ]
+},
+
+// 親密化
+{
+  id:"close",
+  priority:80,
+  condition:s=>s.flags?.flirting && !s.flags.close,
+  text:"関係が少しずつ近づいている",
+  choices:[
+    {
+      text:"さらに距離を縮める",
+      effect:s=>{
+        s.flags.close=true;
+      }
+    },
+    {
+      text:"距離を保つ",
+      effect:s=>{
+        s.flags.flirting=false;
+      }
+    }
+  ]
+},
+
+// 浮気
+{
+  id:"cheat",
+  priority:95,
+  condition:s=>s.flags?.close && !s.flags.cheating,
+  text:"一線を越えそうだ",
+  choices:[
+    {
+      text:"踏み越える",
+      effect:s=>{
+        s.flags.cheating=true;
+        s.love-=20;
+      }
+    },
+    {
+      text:"踏みとどまる",
+      effect:s=>{
+        s.flags.close=false;
+      }
+    }
+  ]
+},
+
+// 発覚
+{
+  id:"caught",
+  priority:100,
+  condition:s=>s.flags?.cheating && Math.random()<0.5,
+  text:"関係がバレた",
+  choices:[
+    {
+      text:"謝る",
+      effect:s=>{
+        s.love-=20;
+      }
+    },
+    {
+      text:"開き直る",
+      effect:s=>{
+        s.love-=40;
+      }
+    }
+  ]
+},
+
+// 修復 or 崩壊
+{
+  id:"relationship_break",
+  priority:110,
+  condition:s=>s.partner && s.love<20,
+  text:"関係が限界に近い",
+  choices:[
+    {
+      text:"修復を試みる",
+      effect:s=>{
+        s.love+=15;
+        s.flags.cheating=false;
+      }
+    },
+    {
+      text:"別れる",
+      effect:s=>{
+        s.partner=null;
+        s.love=0;
+        s.flags={};
+      }
+    }
+  ]
+}
 ];
 
 // ======================
