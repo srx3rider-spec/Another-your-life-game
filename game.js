@@ -209,6 +209,19 @@ const EVENTS = [
 
 function pickEvent(){
     const valid = EVENTS.filter(e=>e.condition(state));
+
+    if(valid.length === 0){
+        return {
+            text: ()=>"何も起きない",
+            choices:[
+                {
+                    text:"次へ",
+                    effect:()=>{}
+                }
+            ]
+        };
+    }
+
     return valid[Math.floor(Math.random()*valid.length)];
 }
 
