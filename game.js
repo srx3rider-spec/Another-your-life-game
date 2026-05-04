@@ -182,7 +182,7 @@ const EVENTS = [
 
 {
     id:"daily",
-    condition:s=>true,
+   condition:s=>s.phase==="adult",
     text:s=>"日常",
     choices:[
         {
