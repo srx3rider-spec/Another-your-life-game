@@ -589,23 +589,15 @@ const EVENTS = [
 // イベント選択
 // ========================
 function pickEvent(){
-  console.log("EVENTS:", EVENTS);   
   const valid = EVENTS.filter(e => !e.condition || e.condition(state));
-  console.log("valid:", valid); 
-  if(valid.length === 0){
-    return {
-      text:()=> "何もない時間が流れた",
-      choices:[
-        {
-          text:"進む",
-          effect:s=>advanceTime()
-        }
-      ]
-    };
-  }
-  return valid[Math.floor(Math.random()*valid.length)];
-}
 
+  console.log("valid:", valid);
+
+  // シャッフル（これが重要）
+  const shuffled = valid.sort(() => Math.random() - 0.5);
+
+  return shuffled[0];
+}
 // ========================
 // 描画
 // ========================
