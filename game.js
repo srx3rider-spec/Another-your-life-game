@@ -1,54 +1,131 @@
+// =====================
+// 状態
+// =====================
 let state = {
   age: 15,
+  phase: "student",
   money: 50,
   hp: 100,
-  happiness: 50,
-  intellect: 0,
-
-  phase: "student",
-
-  children: [],
+  love: 0,
   flags: {}
 };
 
-// 年齢進行（ランダム）
-function advanceTime() {
-  const delta = Math.random() * 2; // 0〜2年
-  state.age += delta;
-
-  if (state.age >= 22) state.phase = "adult";
+// =====================
+// フェーズ更新
+// =====================
+function updatePhase() {
+  if (state.age < 18) state.phase = "student";
+  else if (state.age < 23) state.phase = "young";
+  else state.phase = "adult";
 }
 
-// イベント選択（安全版）
-function pickEvent() {
-  const valid = EVENTS.filter(e => {
-    if (e.phase && e.phase !== state.phase) return false;
-    if (e.condition && !e.condition(state)) return false;
-    return true;
-  });
+// =====================
+// 時間進行
+// =====================
+function advanceTime(years = 1) {
+  state.age += years;
+  updatePhase();
+}
 
-  if (valid.length === 0) {
+// =====================
+// イベント
+// =====================
+const EVENTS = [
+  {
+    id: "student",
+    condition: s => s.phase === "student",
+    text: s => "学校生活の日々",
+    choices: [
+      {
+        text: "勉強する",
+        effect: s => {
+          s.hp -= 5;
+          advanceTime();
+        }
+      },
+      {
+        text: "遊ぶ",
+        effect: s => {
+          s.love += 3;
+          advanceTime();
+        }
+      },
+      {
+        text: "部活に励む",
+        effect: s => {
+          s.hp -= 3;
+          s.love += 2;
+          advanceTime();
+        }
+      }
+    ]
+  },
+  {
+    id: "adult",
+    condition: s => s.phase === "adult",
+    text: s => "大人の日常",
+    choices: [
+      {
+        text: "仕事に集中",
+        effect: s => {
+          s.money += 20;
+          s.hp -= 10;
+          advanceTime();
+        }
+      },
+      {
+        text: "休む",
+        effect: s => {
+          s.hp += 10;
+          advanceTime();
+        }
+      },
+      {
+        text: "起業する",
+        effect: s => {
+          if (Math.random() < 0.5) {
+            s.money += 100;
+          } else {
+            s.money -= 50;
+          }
+          advanceTime();
+        }
+      }
+    ]
+  }
+];
+
+// =====================
+// イベント選択
+// =====================
+function pickEvent() {
+  const available = EVENTS.filter(e => !e.condition || e.condition(state));
+
+  if (available.length === 0) {
     return {
-      text: () => "何も起きなかった",
-      choices: [{
-        text: "次へ",
-        effect: () => advanceTime()
-      }]
+      text: () => "特に何も起きなかった",
+      choices: [
+        {
+          text: "時間が流れる",
+          effect: s => advanceTime()
+        }
+      ]
     };
   }
 
-  return valid[Math.floor(Math.random() * valid.length)];
+  return available[Math.floor(Math.random() * available.length)];
 }
 
-// 描画（壊れない）
+// =====================
+// 描画
+// =====================
 function draw() {
+  document.getElementById("status").innerText =
+    `年齢:${state.age} 金:${state.money} 愛:${state.love} HP:${state.hp}`;
+
   const event = pickEvent();
 
-  document.getElementById("status").innerText =
-    `年齢:${Math.floor(state.age)} 金:${state.money} HP:${state.hp}`;
-
-  document.getElementById("event").innerText =
-    typeof event.text === "function" ? event.text(state) : event.text;
+  document.getElementById("event").innerText = event.text(state);
 
   const choicesDiv = document.getElementById("choices");
   choicesDiv.innerHTML = "";
@@ -56,16 +133,13 @@ function draw() {
   event.choices.forEach(c => {
     const btn = document.createElement("button");
     btn.innerText = c.text;
-
     btn.onclick = () => {
       c.effect(state);
-      advanceTime();
       draw();
     };
-
     choicesDiv.appendChild(btn);
   });
 }
 
-// 初回
+// 初期表示
 draw();
