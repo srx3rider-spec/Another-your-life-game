@@ -590,7 +590,7 @@ const EVENTS = [
 // ========================
 function pickEvent(){
   console.log("EVENTS:", EVENTS);   
-  const valid = EVENTS.filter(e=>e.condition(state));
+  const valid = EVENTS.filter(e => !e.condition || e.condition(state));
   console.log("valid:", valid); 
   if(valid.length === 0){
     return {
