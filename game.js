@@ -122,7 +122,7 @@ const EVENTS = [
                 s.hp += 10;
                 s.love += 5;
             }
-        }
+        },
         {
     text:"仕事に集中",
     effect:s=>{
