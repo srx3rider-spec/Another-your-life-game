@@ -93,8 +93,7 @@ function createPartner(){
 
 const EVENTS = [
 
-{
-    id:"school",
+
     
 {
     id:"adult_work",
