@@ -6,7 +6,7 @@ condition:s=>true
 // =========================
 
 let state = {
-    timeBuffer = 0,
+    timeBuffer:0,
     age:15,
     money:50,
     love:0,
