@@ -91,20 +91,35 @@ const EVENTS = [
 
 {
     id:"school",
-    condition:s=>s.age===15,
-    text:s=>"進路を考える",
+    condition:s=>s.phase==="student",
+
+    text:s=>"学生生活をどう過ごす？",
+
     choices:[
         {
             text:"勉強する",
-            effect:s=>{s.love+=5;}
+            effect:s=>{
+                s.money += 5;
+                s.love += 2;
+            }
         },
         {
             text:"遊ぶ",
-            effect:s=>{s.money+=10;}
+            effect:s=>{
+                s.money += 10;
+                s.love -= 2;
+            }
+        },
+        {
+            text:"部活に励む",
+            effect:s=>{
+                s.hp += 5;
+                s.love += 5;
+                s.flags.club = true;
+            }
         }
     ]
 },
-
 {
     id:"love_start",
     condition:s=>!s.partner && s.age>18,
