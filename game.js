@@ -589,7 +589,9 @@ const EVENTS = [
 // イベント選択
 // ========================
 function pickEvent(){
+  console.log("EVENTS:", EVENTS);   
   const valid = EVENTS.filter(e=>e.condition(state));
+  console.log("valid:", valid); 
   if(valid.length === 0){
     return {
       text:()=> "何もない時間が流れた",
@@ -608,6 +610,7 @@ function pickEvent(){
 // 描画
 // ========================
 function draw(){
+   console.log("draw動いた"); 
   document.getElementById("status").innerText =
     `年齢:${Math.floor(state.age)} 金:${state.money} 愛:${state.love} HP:${state.hp}`;
 
