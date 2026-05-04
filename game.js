@@ -15,10 +15,10 @@ let state = {
     partner:null,
     married:false,
     affairPartner:null,
-　　advanceTime(0.2 + Math.random()*0.8);
+　　
     flags:{}
 };
-
+advanceTime(0.2 + Math.random()*0.8);
 // =========================
 // UI
 // =========================
