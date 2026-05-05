@@ -9,74 +9,50 @@
 <h1>Another Your Life</h1>
 
 <div id="status"></div>
-<img id="image" width="300"><br>
+<img id="image" width="300">
 <div id="event"></div>
 <div id="choices"></div>
 
 <script>
 
-// =====================
-// STATE
-// =====================
 let state = {
   age: 15,
   money: 50,
   hp: 100,
   happiness: 50,
-  intellect: 0,
   partner: null,
-  married: false,
-  children: 0,
-  alive: true,
-
-  // 画像ID（固定用）
-  partnerImg: null,
-  childImg: null
+  alive: true
 };
 
-// =====================
-// TIME
-// =====================
 function advanceTime() {
-  state.age += 1;
+  state.age++;
 
-  if (state.age > 60) state.hp -= 2;
-  if (state.age > 80) state.hp -= 5;
+  // 老化強化
+  if (state.age > 40) state.hp -= 3;
+  if (state.age > 60) state.hp -= 6;
+  if (state.age > 80) state.hp -= 10;
 
-  if (state.hp <= 0 || state.age > 100) {
+  // 強制死亡
+  if (state.hp <= 0 || state.age > 90) {
     state.alive = false;
   }
 }
 
-// =====================
-// サイコロ
-// =====================
-function rollDice() {
-  return Math.floor(Math.random() * 6) + 1;
+// 安定画像（確実に出る）
+function getImage(seed) {
+  return `https://source.unsplash.com/300x300/?${seed}`;
 }
 
-// =====================
-// 固定画像生成（ここがコア）
-// =====================
-function getPersonImage(seed) {
-  return `https://picsum.photos/seed/${seed}/300/300`;
-}
-
-// =====================
-// EVENTS
-// =====================
 const EVENTS = [
 
-  // 学生
   {
-    text: s => "今日はどうする？",
-    image: "https://picsum.photos/seed/school/300/300",
+    text: "今日はどうする？",
+    image: "student",
     choices: [
       {
         text: "勉強",
         effect: s => {
-          s.intellect += 5;
-          s.hp -= 2;
+          s.hp -= 3;
           advanceTime();
         }
       },
@@ -84,24 +60,17 @@ const EVENTS = [
         text: "遊ぶ",
         effect: s => {
           s.happiness += 5;
-
-          // 恋人発生
-          if (Math.random() < 0.3 && !s.partner) {
-            s.partner = "恋人";
-            s.partnerImg = Math.floor(Math.random() * 10000);
-          }
-
+          if (Math.random() < 0.4) s.partner = "恋人";
           advanceTime();
         }
       }
     ]
   },
 
-  // 恋人
   {
-    condition: s => s.partner && !s.married,
-    text: s => `${s.partner}とデート`,
-    image: s => getPersonImage(s.partnerImg),
+    condition: s => s.partner,
+    text: s => `${s.partner}と過ごす`,
+    image: "couple",
     choices: [
       {
         text: "楽しむ",
@@ -111,120 +80,73 @@ const EVENTS = [
         }
       },
       {
-        text: "結婚する",
+        text: "ケンカ",
         effect: s => {
-          if (s.happiness > 40) {
-            s.married = true;
-            s.partner = "配偶者";
-          }
+          s.happiness -= 10;
           advanceTime();
         }
       }
     ]
   },
 
-  // 子供
   {
-    condition: s => s.married && Math.random() < 0.3,
-    text: s => "子供が生まれた",
-    image: s => {
-      if (!s.childImg) {
-        s.childImg = Math.floor(Math.random() * 10000);
-      }
-      return getPersonImage(s.childImg);
-    },
+    text: "仕事のストレス",
+    image: "office",
     choices: [
       {
-        text: "育てる",
+        text: "頑張る",
         effect: s => {
-          s.children += 1;
-          s.happiness += 15;
-          advanceTime();
-        }
-      }
-    ]
-  },
-
-  // 仕事
-  {
-    condition: s => s.age >= 18,
-    text: s => "仕事どうする？",
-    image: "https://picsum.photos/seed/work/300/300",
-    choices: [
-      {
-        text: "仕事に集中",
-        effect: s => {
-          s.money += 30;
-          s.hp -= 5;
-          s.happiness -= 2;
+          s.money += 20;
+          s.hp -= 10;
           advanceTime();
         }
       },
       {
-        text: "休む",
+        text: "逃げる",
         effect: s => {
-          s.hp += 10;
-          s.happiness += 5;
+          s.hp += 5;
           advanceTime();
         }
       }
     ]
   },
 
-  // サイコロイベント
   {
-    text: s => "運命の分岐（サイコロ）",
-    image: "https://picsum.photos/seed/dice/300/300",
+    text: "事故が起きた（運命）",
+    image: "accident",
     auto: true,
     effect: s => {
-      let dice = rollDice();
+      let d = Math.random();
 
-      if (dice >= 5) {
-        s.money += 100;
-      } else if (dice <= 2) {
-        s.money -= 50;
-        s.hp -= 10;
+      if (d < 0.3) {
+        s.hp -= 50;
+      } else if (d < 0.6) {
+        s.hp -= 20;
       }
 
       advanceTime();
-      return `🎲 サイコロ: ${dice}`;
+      return "運命が動いた";
     }
   }
 
 ];
 
-// =====================
-// PICK
-// =====================
 function pickEvent() {
   const valid = EVENTS.filter(e => !e.condition || e.condition(state));
   return valid[Math.floor(Math.random() * valid.length)];
 }
 
-// =====================
-// ENDING
-// =====================
-function getEnding() {
-  if (state.money > 500) return "成功した人生";
-  if (state.children > 0) return "家族に囲まれた人生";
-  if (state.happiness > 80) return "幸せな人生";
-  return "平凡な人生";
-}
-
-// =====================
-// DRAW
-// =====================
 function draw() {
 
   if (!state.alive) {
     document.getElementById("event").innerText =
-      `あなたは${state.age}歳で人生を終えた\n${getEnding()}`;
+      `あなたは${state.age}歳で死亡した`;
     document.getElementById("choices").innerHTML = "";
     return;
   }
 
   document.getElementById("status").innerText =
-    `年齢:${state.age} 金:${state.money} HP:${state.hp} 幸福:${state.happiness} 子供:${state.children}`;
+    `年齢:${state.age} HP:${state.hp} 幸福:${state.happiness}`;
 
   const event = pickEvent();
 
@@ -232,18 +154,16 @@ function draw() {
     typeof event.text === "function" ? event.text(state) : event.text;
 
   document.getElementById("image").src =
-    typeof event.image === "function" ? event.image(state) : event.image;
+    getImage(event.image || "life");
 
   const div = document.getElementById("choices");
   div.innerHTML = "";
 
   if (event.auto) {
-    const result = event.effect(state);
-
+    const r = event.effect(state);
     const btn = document.createElement("button");
-    btn.innerText = result + " → 次へ";
+    btn.innerText = r + " → 次へ";
     btn.onclick = draw;
-
     div.appendChild(btn);
     return;
   }
