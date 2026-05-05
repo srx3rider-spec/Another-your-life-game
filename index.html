@@ -1,209 +1,216 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
 <title>Another Your Life</title>
+
 <style>
-body {
+body{
   background:#400;
   color:#fff;
   font-family:sans-serif;
   padding:20px;
 }
-.card {
+
+.card{
   background:#222;
   padding:15px;
-  border-radius:10px;
   margin-bottom:15px;
+  border-radius:10px;
 }
-button {
+
+button{
   display:block;
   width:100%;
-  padding:12px;
   margin:8px 0;
+  padding:10px;
   border:none;
   border-radius:8px;
   background:#3b7ddd;
   color:#fff;
-  font-size:16px;
+  cursor:pointer;
 }
-img {
+
+button:hover{ background:#5a95ff; }
+
+img{
   width:100%;
   border-radius:10px;
   margin-bottom:10px;
 }
+
+#dice{
+  font-size:30px;
+  text-align:center;
+  margin:10px;
+}
 </style>
 </head>
+
 <body>
 
 <h2>Another Your Life</h2>
 
-<div id="stats" class="card"></div>
+<div class="card" id="status"></div>
 <img id="image">
-<div id="event" class="card"></div>
+<div class="card" id="event"></div>
+<div id="dice"></div>
 <div id="choices"></div>
 
 <script>
 
-// ================= 状態 =================
+// ===== 状態 =====
 let state = {
-  name: "吉田 稔",
   age: 15,
   hp: 100,
-  happiness: 50,
-  alive: true
+  money: 50,
+  happiness: 50
 };
 
-// ================= 画像 =================
-function setImage(type){
-  const map = {
-    student: "school",
-    work: "office",
-    love: "couple",
-    accident: "accident",
-    money: "money",
-    life: "life"
-  };
-
-  const keyword = map[type] || "life";
-
-  document.getElementById("image").src =
-    "https://picsum.photos/600?random=" + keyword + Math.random();
-}
-
-// ================= 描画 =================
-function draw(){
-
-  if(!state.alive){
-    document.getElementById("event").innerText =
-      "あなたは" + state.age + "歳で死亡した";
-    document.getElementById("choices").innerHTML = "";
-    return;
-  }
-
-  document.getElementById("stats").innerText =
-    `${state.name} | 年齢:${state.age} HP:${state.hp} 幸福:${state.happiness}`;
-
-  const e = pickEvent();
-
-  setImage(e.type);
-
-  document.getElementById("event").innerText = e.text;
-
-  const div = document.getElementById("choices");
-  div.innerHTML = "";
-
-  // 🎲 サイコロ
-  if(e.dice){
-    const btn = document.createElement("button");
-    btn.innerText = "🎲 運命に任せる";
-    btn.onclick = ()=>{
-      const r = Math.random();
-      if(r < 0.5){
-        e.success(state);
-      }else{
-        e.fail(state);
-      }
-      next();
-    };
-    div.appendChild(btn);
-    return;
-  }
-
-  // 通常選択
-  e.choices.forEach(c=>{
-    const btn = document.createElement("button");
-    btn.innerText = c.text;
-    btn.onclick = ()=>{
-      c.effect(state);
-      next();
-    };
-    div.appendChild(btn);
-  });
-}
-
-// ================= 次へ =================
-function next(){
-  state.age++;
-
-  if(state.hp <= 0){
-    state.alive = false;
-  }
-
-  draw();
-}
-
-// ================= イベント選択 =================
-function pickEvent(){
-
-  // 🎲 20%で強制サイコロ
-  if(Math.random() < 0.2){
-    return EVENTS.find(e => e.dice);
-  }
-
-  const valid = EVENTS.filter(e => !e.condition || e.condition(state));
-
-  return valid[Math.floor(Math.random() * valid.length)];
-}
-
-// ================= イベント =================
+// ===== イベント =====
 const EVENTS = [
 
   // 学生
   {
-    type: "student",
-    condition: s => s.age < 18,
-    text: "学生生活",
-    choices: [
-      { text:"勉強", effect:s=>{ s.hp-=2; s.happiness-=1 }},
-      { text:"遊ぶ", effect:s=>{ s.happiness+=3; s.hp-=1 }}
-    ]
-  },
-
-  // 社会人
-  {
-    type: "work",
-    condition: s => s.age >= 18,
-    text: "仕事のストレス",
-    choices: [
-      { text:"頑張る", effect:s=>{ s.hp-=10; s.happiness+=1 }},
-      { text:"逃げる", effect:s=>{ s.happiness-=5 }}
+    type:"student",
+    text:"勉強する？",
+    choices:[
+      {text:"勉強", effect:s=>{s.happiness-=2;}},
+      {text:"遊ぶ", effect:s=>{s.happiness+=5; s.hp-=3;}}
     ]
   },
 
   // 恋愛
   {
-    type: "love",
-    text: "恋のチャンス",
-    choices: [
-      { text:"告白", effect:s=>{ s.happiness+=10 }},
-      { text:"何もしない", effect:s=>{} }
+    type:"love",
+    text:"気になる人がいる",
+    choices:[
+      {text:"告白", effect:s=>{s.happiness+=15;}},
+      {text:"やめる", effect:s=>{s.happiness-=5;}}
     ]
   },
 
-  // 宝くじ
+  // 仕事
   {
-    type: "money",
-    text: "宝くじを見つけた",
-    choices: [
-      { text:"換金する", effect:s=>{ s.happiness+=20 }},
-      { text:"無視する", effect:s=>{} }
+    type:"work",
+    text:"仕事のストレス",
+    choices:[
+      {text:"頑張る", effect:s=>{s.money+=20; s.hp-=10;}},
+      {text:"サボる", effect:s=>{s.hp+=5;}}
     ]
   },
 
-  // 🎲 運命（事故）
+  // 宝くじ（サイコロ）
   {
-    type: "accident",
-    text: "事故が起きた（運命）",
-    dice: true,
-    success: s => { s.hp -= 20; },
-    fail: s => { s.hp -= 5; }
+    type:"money",
+    dice:true,
+    text:"宝くじを見つけた",
+    resolve:(roll,s)=>{
+      if(roll<=2){ s.money-=10; return "ハズレ"; }
+      if(roll<=4){ s.money+=10; return "ちょい当たり"; }
+      s.money+=100; return "大当たり!!";
+    }
+  },
+
+  // 事故（サイコロ）
+  {
+    type:"accident",
+    dice:true,
+    text:"事故が起きた",
+    resolve:(roll,s)=>{
+      if(roll<=2){ s.hp-=50; return "重傷"; }
+      if(roll<=4){ s.hp-=20; return "軽傷"; }
+      return "無傷！";
+    }
   }
-
 ];
 
-// ================= 起動 =================
-draw();
+// ===== 画像 =====
+function setImage(type){
+  const map = {
+    student:"school classroom",
+    love:"romantic couple",
+    work:"office stress",
+    money:"money cash",
+    accident:"car accident"
+  };
+
+  const keyword = map[type] || "life";
+
+  document.getElementById("image").src =
+    "https://source.unsplash.com/800x500/?"+encodeURIComponent(keyword);
+}
+
+// ===== 状態表示 =====
+function updateStatus(){
+  document.getElementById("status").innerText =
+    `年齢:${state.age} HP:${state.hp} 金:${state.money} 幸福:${state.happiness}`;
+}
+
+// ===== イベント選択 =====
+function pickEvent(){
+  if(state.age < 18){
+    return EVENTS.filter(e=>e.type==="student"||e.type==="love");
+  }
+  if(state.age < 60){
+    return EVENTS.filter(e=>e.type!=="student");
+  }
+  return EVENTS;
+}
+
+// ===== メイン =====
+function next(){
+
+  if(state.hp<=0 || state.age>80){
+    document.getElementById("event").innerText="人生終了";
+    document.getElementById("choices").innerHTML="";
+    return;
+  }
+
+  state.age++;
+
+  const pool = pickEvent();
+  const e = pool[Math.floor(Math.random()*pool.length)];
+
+  setImage(e.type);
+  document.getElementById("event").innerText = e.text;
+
+  const choicesDiv = document.getElementById("choices");
+  const diceDiv = document.getElementById("dice");
+
+  choicesDiv.innerHTML="";
+  diceDiv.innerText="";
+
+  // ===== サイコロ =====
+  if(e.dice){
+    const btn = document.createElement("button");
+    btn.innerText="🎲 運命に任せる";
+    btn.onclick=()=>{
+      const roll = Math.floor(Math.random()*6)+1;
+      const result = e.resolve(roll,state);
+      diceDiv.innerText = `🎲 ${roll} → ${result}`;
+      updateStatus();
+    };
+    choicesDiv.appendChild(btn);
+    return;
+  }
+
+  // ===== 通常選択 =====
+  e.choices.forEach(c=>{
+    const btn=document.createElement("button");
+    btn.innerText=c.text;
+    btn.onclick=()=>{
+      c.effect(state);
+      updateStatus();
+      next();
+    };
+    choicesDiv.appendChild(btn);
+  });
+}
+
+// ===== 初期 =====
+updateStatus();
+next();
 
 </script>
 
