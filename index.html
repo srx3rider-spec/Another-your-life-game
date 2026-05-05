@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Another Your Life</title>
+  <meta charset="UTF-8">
+  <title>Another Your Life</title>
 </head>
 <body>
 
@@ -14,45 +14,41 @@
 <div id="choices"></div>
 
 <script>
-
+// =====================
+// 状態
+// =====================
 let state = {
   age: 15,
   money: 50,
   hp: 100,
   happiness: 50,
-  partner: null,
-  alive: true
 };
 
+// =====================
+// 時間進行
+// =====================
 function advanceTime() {
-  state.age++;
+  state.age += 1;
 
-  // 老化強化
-  if (state.age > 40) state.hp -= 3;
-  if (state.age > 60) state.hp -= 6;
-  if (state.age > 80) state.hp -= 10;
-
-  // 強制死亡
-  if (state.hp <= 0 || state.age > 90) {
-    state.alive = false;
+  if (state.hp <= 0 || state.age > 80) {
+    document.getElementById("event").innerText =
+      "あなたは" + state.age + "歳で死亡した";
+    document.getElementById("choices").innerHTML = "";
+    return;
   }
 }
 
-// 安定画像（確実に出る）
-function getImage(seed) {
-  return `https://source.unsplash.com/300x300/?${seed}`;
-}
-
+// =====================
+// イベント
+// =====================
 const EVENTS = [
-
   {
-    text: "今日はどうする？",
-    image: "student",
+    text: s => "今日はどうする？",
     choices: [
       {
-        text: "勉強",
+        text: "勉強する",
         effect: s => {
-          s.hp -= 3;
+          s.happiness -= 2;
           advanceTime();
         }
       },
@@ -60,7 +56,36 @@ const EVENTS = [
         text: "遊ぶ",
         effect: s => {
           s.happiness += 5;
-          if (Math.random() < 0.4) s.partner = "恋人";
+          s.hp -= 2;
+          advanceTime();
+        }
+      },
+      {
+        text: "部活に励む",
+        effect: s => {
+          s.hp += 3;
+          advanceTime();
+        }
+      }
+    ]
+  },
+
+  // 🎲 サイコロ
+  {
+    text: s => "運命の分岐（サイコロ）",
+    choices: [
+      {
+        text: "振る",
+        effect: s => {
+          const dice = Math.floor(Math.random() * 6) + 1;
+          alert("出た目：" + dice);
+
+          if (dice >= 4) {
+            s.money += 50;
+          } else {
+            s.hp -= 20;
+          }
+
           advanceTime();
         }
       }
@@ -68,119 +93,82 @@ const EVENTS = [
   },
 
   {
-    condition: s => s.partner,
-    text: s => `${s.partner}と過ごす`,
-    image: "couple",
+    text: s => "バイトを始めた",
     choices: [
       {
-        text: "楽しむ",
+        text: "頑張る",
+        effect: s => {
+          s.money += 30;
+          s.hp -= 5;
+          advanceTime();
+        }
+      }
+    ]
+  },
+
+  {
+    text: s => "友達に誘われた",
+    choices: [
+      {
+        text: "行く",
         effect: s => {
           s.happiness += 10;
           advanceTime();
         }
       },
       {
-        text: "ケンカ",
+        text: "断る",
         effect: s => {
-          s.happiness -= 10;
+          s.happiness -= 3;
           advanceTime();
         }
       }
     ]
-  },
-
-  {
-    text: "仕事のストレス",
-    image: "office",
-    choices: [
-      {
-        text: "頑張る",
-        effect: s => {
-          s.money += 20;
-          s.hp -= 10;
-          advanceTime();
-        }
-      },
-      {
-        text: "逃げる",
-        effect: s => {
-          s.hp += 5;
-          advanceTime();
-        }
-      }
-    ]
-  },
-
-  {
-    text: "事故が起きた（運命）",
-    image: "accident",
-    auto: true,
-    effect: s => {
-      let d = Math.random();
-
-      if (d < 0.3) {
-        s.hp -= 50;
-      } else if (d < 0.6) {
-        s.hp -= 20;
-      }
-
-      advanceTime();
-      return "運命が動いた";
-    }
   }
-
 ];
 
+// =====================
+// ランダムイベント
+// =====================
 function pickEvent() {
-  const valid = EVENTS.filter(e => !e.condition || e.condition(state));
-  return valid[Math.floor(Math.random() * valid.length)];
+  return EVENTS[Math.floor(Math.random() * EVENTS.length)];
 }
 
+// =====================
+// 描画
+// =====================
 function draw() {
+  document.getElementById("status").innerText =
+    `年齢:${state.age} 金:${state.money} HP:${state.hp} 幸福:${state.happiness}`;
 
-  if (!state.alive) {
-    document.getElementById("event").innerText =
-      `あなたは${state.age}歳で死亡した`;
-    document.getElementById("choices").innerHTML = "";
-    return;
+  // 画像
+  const img = document.getElementById("image");
+  if (state.age < 18) {
+    img.src = "https://source.unsplash.com/300x300/?student";
+  } else if (state.age < 40) {
+    img.src = "https://source.unsplash.com/300x300/?office";
+  } else {
+    img.src = "https://source.unsplash.com/300x300/?elderly";
   }
 
-  document.getElementById("status").innerText =
-    `年齢:${state.age} HP:${state.hp} 幸福:${state.happiness}`;
-
   const event = pickEvent();
-
-  document.getElementById("event").innerText =
-    typeof event.text === "function" ? event.text(state) : event.text;
-
-  document.getElementById("image").src =
-    getImage(event.image || "life");
+  document.getElementById("event").innerText = event.text(state);
 
   const div = document.getElementById("choices");
   div.innerHTML = "";
 
-  if (event.auto) {
-    const r = event.effect(state);
-    const btn = document.createElement("button");
-    btn.innerText = r + " → 次へ";
-    btn.onclick = draw;
-    div.appendChild(btn);
-    return;
-  }
-
   event.choices.forEach(c => {
     const btn = document.createElement("button");
     btn.innerText = c.text;
-
     btn.onclick = () => {
       c.effect(state);
       draw();
     };
-
     div.appendChild(btn);
   });
 }
 
+// 起動
 draw();
 
 </script>
