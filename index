@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Another Your Life</title>
+</head>
+<body>
+
+<h1>Another Your Life</h1>
+
+<div id="status"></div>
+<div id="event"></div>
+<div id="choices"></div>
+
+<script>
+
+// =======================
+// STATE
+// =======================
+let state = {
+  age: 15,
+  money: 50,
+  hp: 100,
+  happiness: 50,
+  intellect: 0,
+  partner: null,
+  married: false,
+  children: 0,
+  job: null,
+  business: false
+};
+
+// =======================
+// TIME
+// =======================
+function advanceTime() {
+  state.age += 1;
+}
+
+// =======================
+// EVENTS（完成版）
+// =======================
+const EVENTS = [
+
+  // 学生基本
+  {
+    id: "student",
+    condition: s => s.age < 18,
+    text: s => "今日はどうする？",
+    choices: [
+      {
+        text: "勉強する",
+        effect: s => {
+          s.intellect += 5;
+          s.hp -= 2;
+          advanceTime();
+        }
+      },
+      {
+        text: "遊ぶ",
+        effect: s => {
+          s.happiness += 5;
+          if (Math.random() < 0.3 && !s.partner) {
+            s.partner = "恋人";
+          }
+          advanceTime();
+        }
+      },
+      {
+        text: "部活",
+        effect: s => {
+          s.hp -= 3;
+          s.happiness += 2;
+          advanceTime();
+        }
+      }
+    ]
+  },
+
+  // 恋愛
+  {
+    id: "love",
+    condition: s => s.partner && !s.married,
+    text: s => `${s.partner}とどうする？`,
+    choices: [
+      {
+        text: "デート",
+        effect: s => {
+          s.happiness += 10;
+          advanceTime();
+        }
+      },
+      {
+        text: "放置",
+        effect: s => {
+          s.happiness -= 5;
+          advanceTime();
+        }
+      },
+      {
+        text: "結婚する",
+        effect: s => {
+          if (s.happiness > 40) {
+            s.married = true;
+            s.partner = "配偶者";
+          }
+          advanceTime();
+        }
+      }
+    ]
+  },
+
+  // 社会人
+  {
+    id: "work",
+    condition: s => s.age >= 18,
+    text: s => "仕事どうする？",
+    choices: [
+      {
+        text: "働く",
+        effect: s => {
+          s.money += 30;
+          s.hp -= 5;
+          advanceTime();
+        }
+      },
+      {
+        text: "休む",
+        effect: s => {
+          s.hp += 10;
+          advanceTime();
+        }
+      },
+      {
+        text: "起業",
+        effect: s => {
+          if (Math.random() < 0.5) {
+            s.money += 100;
+            s.business = true;
+          } else {
+            s.money -= 50;
+          }
+          advanceTime();
+        }
+      }
+    ]
+  },
+
+  // 子供
+  {
+    id: "child",
+    condition: s => s.married && Math.random() < 0.3,
+    text: s => "子供が生まれた",
+    choices: [
+      {
+        text: "喜ぶ",
+        effect: s => {
+          s.children += 1;
+          s.happiness += 20;
+          advanceTime();
+        }
+      }
+    ]
+  },
+
+  // 家庭イベント
+  {
+    id: "family",
+    condition: s => s.children > 0,
+    text: s => "子供との時間",
+    choices: [
+      {
+        text: "遊ぶ",
+        effect: s => {
+          s.happiness += 10;
+          advanceTime();
+        }
+      },
+      {
+        text: "放置",
+        effect: s => {
+          s.happiness -= 5;
+          advanceTime();
+        }
+      }
+    ]
+  }
+
+];
+
+// =======================
+// EVENT PICK
+// =======================
+function pickEvent() {
+  const valid = EVENTS.filter(e => !e.condition || e.condition(state));
+  return valid[Math.floor(Math.random() * valid.length)];
+}
+
+// =======================
+// DRAW（触らない）
+// =======================
+function draw() {
+
+  document.getElementById("status").innerText =
+    `年齢:${state.age} 金:${state.money} HP:${state.hp} 幸福:${state.happiness} 知性:${state.intellect} 子供:${state.children}`;
+
+  const event = pickEvent();
+
+  document.getElementById("event").innerText = event.text(state);
+
+  const div = document.getElementById("choices");
+  div.innerHTML = "";
+
+  event.choices.forEach(c => {
+    const btn = document.createElement("button");
+    btn.innerText = c.text;
+
+    btn.onclick = () => {
+      c.effect(state);
+      draw();
+    };
+
+    div.appendChild(btn);
+  });
+}
+
+draw();
+
+</script>
+
+</body>
+</html>
