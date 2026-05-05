@@ -77,4 +77,20 @@ const EVENTS = [
       }
     ]
   }
+{
+    text: s => "バイトを始めた",
+    choices: [
+      { text: "頑張る", effect: s => { s.money += 30; s.hp -= 5; advanceTime(); }},
+      { text: "サボる", effect: s => { s.hp += 5; advanceTime(); }}
+    ]
+  },
+
+  {
+    text: s => "友達に誘われた",
+    choices: [
+      { text: "行く", effect: s => { s.hp += 10; advanceTime(); }},
+      { text: "断る", effect: s => { s.intellect += 3; advanceTime(); }}
+    ]
+  }
+
 ];
