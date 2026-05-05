@@ -11,6 +11,7 @@ let state = {
   affairPartner:null,
 　child:null,
 　grandchild:false,
+  currentEvent: null,
   flags:{}
 };
 
@@ -601,12 +602,15 @@ function pickEvent(){
 // ========================
 // 描画
 // ========================
-function draw(){
-   console.log("draw動いた"); 
-  document.getElementById("status").innerText =
-    `年齢:${Math.floor(state.age)} 金:${state.money} 愛:${state.love} HP:${state.hp}`;
 
-  const event = pickEvent();
+function draw(){
+
+  // 👇ここ追加
+  if (!state.currentEvent) {
+    state.currentEvent = pickEvent();
+  }
+
+  const event = state.currentEvent;
 
   document.getElementById("event").innerText = event.text(state);
 
@@ -616,13 +620,18 @@ function draw(){
   event.choices.forEach(c=>{
     const btn = document.createElement("button");
     btn.innerText = c.text;
+
     btn.onclick = ()=>{
       c.effect(state);
+
+      // 👇これが超重要
+      state.currentEvent = null;
+
       draw();
     };
+
     div.appendChild(btn);
   });
 }
-
 // ========================
 draw();
