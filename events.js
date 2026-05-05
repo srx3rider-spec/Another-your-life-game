@@ -76,7 +76,7 @@ const EVENTS = [
         }
       }
     ]
-  }
+  },
 {
     text: s => "バイトを始めた",
     choices: [
