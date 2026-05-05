@@ -9,14 +9,15 @@
 <h1>Another Your Life</h1>
 
 <div id="status"></div>
+<img id="image" width="300"><br>
 <div id="event"></div>
 <div id="choices"></div>
 
 <script>
 
-// =======================
+// =====================
 // STATE
-// =======================
+// =====================
 let state = {
   age: 15,
   money: 50,
@@ -26,30 +27,53 @@ let state = {
   partner: null,
   married: false,
   children: 0,
-  job: null,
-  business: false
+  alive: true,
+
+  // 画像ID（固定用）
+  partnerImg: null,
+  childImg: null
 };
 
-// =======================
+// =====================
 // TIME
-// =======================
+// =====================
 function advanceTime() {
   state.age += 1;
+
+  if (state.age > 60) state.hp -= 2;
+  if (state.age > 80) state.hp -= 5;
+
+  if (state.hp <= 0 || state.age > 100) {
+    state.alive = false;
+  }
 }
 
-// =======================
-// EVENTS（完成版）
-// =======================
+// =====================
+// サイコロ
+// =====================
+function rollDice() {
+  return Math.floor(Math.random() * 6) + 1;
+}
+
+// =====================
+// 固定画像生成（ここがコア）
+// =====================
+function getPersonImage(seed) {
+  return `https://picsum.photos/seed/${seed}/300/300`;
+}
+
+// =====================
+// EVENTS
+// =====================
 const EVENTS = [
 
-  // 学生基本
+  // 学生
   {
-    id: "student",
-    condition: s => s.age < 18,
     text: s => "今日はどうする？",
+    image: "https://picsum.photos/seed/school/300/300",
     choices: [
       {
-        text: "勉強する",
+        text: "勉強",
         effect: s => {
           s.intellect += 5;
           s.hp -= 2;
@@ -60,40 +84,29 @@ const EVENTS = [
         text: "遊ぶ",
         effect: s => {
           s.happiness += 5;
+
+          // 恋人発生
           if (Math.random() < 0.3 && !s.partner) {
             s.partner = "恋人";
+            s.partnerImg = Math.floor(Math.random() * 10000);
           }
-          advanceTime();
-        }
-      },
-      {
-        text: "部活",
-        effect: s => {
-          s.hp -= 3;
-          s.happiness += 2;
+
           advanceTime();
         }
       }
     ]
   },
 
-  // 恋愛
+  // 恋人
   {
-    id: "love",
     condition: s => s.partner && !s.married,
-    text: s => `${s.partner}とどうする？`,
+    text: s => `${s.partner}とデート`,
+    image: s => getPersonImage(s.partnerImg),
     choices: [
       {
-        text: "デート",
+        text: "楽しむ",
         effect: s => {
           s.happiness += 10;
-          advanceTime();
-        }
-      },
-      {
-        text: "放置",
-        effect: s => {
-          s.happiness -= 5;
           advanceTime();
         }
       },
@@ -110,17 +123,40 @@ const EVENTS = [
     ]
   },
 
-  // 社会人
+  // 子供
   {
-    id: "work",
-    condition: s => s.age >= 18,
-    text: s => "仕事どうする？",
+    condition: s => s.married && Math.random() < 0.3,
+    text: s => "子供が生まれた",
+    image: s => {
+      if (!s.childImg) {
+        s.childImg = Math.floor(Math.random() * 10000);
+      }
+      return getPersonImage(s.childImg);
+    },
     choices: [
       {
-        text: "働く",
+        text: "育てる",
+        effect: s => {
+          s.children += 1;
+          s.happiness += 15;
+          advanceTime();
+        }
+      }
+    ]
+  },
+
+  // 仕事
+  {
+    condition: s => s.age >= 18,
+    text: s => "仕事どうする？",
+    image: "https://picsum.photos/seed/work/300/300",
+    choices: [
+      {
+        text: "仕事に集中",
         effect: s => {
           s.money += 30;
           s.hp -= 5;
+          s.happiness -= 2;
           advanceTime();
         }
       },
@@ -128,88 +164,89 @@ const EVENTS = [
         text: "休む",
         effect: s => {
           s.hp += 10;
-          advanceTime();
-        }
-      },
-      {
-        text: "起業",
-        effect: s => {
-          if (Math.random() < 0.5) {
-            s.money += 100;
-            s.business = true;
-          } else {
-            s.money -= 50;
-          }
+          s.happiness += 5;
           advanceTime();
         }
       }
     ]
   },
 
-  // 子供
+  // サイコロイベント
   {
-    id: "child",
-    condition: s => s.married && Math.random() < 0.3,
-    text: s => "子供が生まれた",
-    choices: [
-      {
-        text: "喜ぶ",
-        effect: s => {
-          s.children += 1;
-          s.happiness += 20;
-          advanceTime();
-        }
-      }
-    ]
-  },
+    text: s => "運命の分岐（サイコロ）",
+    image: "https://picsum.photos/seed/dice/300/300",
+    auto: true,
+    effect: s => {
+      let dice = rollDice();
 
-  // 家庭イベント
-  {
-    id: "family",
-    condition: s => s.children > 0,
-    text: s => "子供との時間",
-    choices: [
-      {
-        text: "遊ぶ",
-        effect: s => {
-          s.happiness += 10;
-          advanceTime();
-        }
-      },
-      {
-        text: "放置",
-        effect: s => {
-          s.happiness -= 5;
-          advanceTime();
-        }
+      if (dice >= 5) {
+        s.money += 100;
+      } else if (dice <= 2) {
+        s.money -= 50;
+        s.hp -= 10;
       }
-    ]
+
+      advanceTime();
+      return `🎲 サイコロ: ${dice}`;
+    }
   }
 
 ];
 
-// =======================
-// EVENT PICK
-// =======================
+// =====================
+// PICK
+// =====================
 function pickEvent() {
   const valid = EVENTS.filter(e => !e.condition || e.condition(state));
   return valid[Math.floor(Math.random() * valid.length)];
 }
 
-// =======================
-// DRAW（触らない）
-// =======================
+// =====================
+// ENDING
+// =====================
+function getEnding() {
+  if (state.money > 500) return "成功した人生";
+  if (state.children > 0) return "家族に囲まれた人生";
+  if (state.happiness > 80) return "幸せな人生";
+  return "平凡な人生";
+}
+
+// =====================
+// DRAW
+// =====================
 function draw() {
 
+  if (!state.alive) {
+    document.getElementById("event").innerText =
+      `あなたは${state.age}歳で人生を終えた\n${getEnding()}`;
+    document.getElementById("choices").innerHTML = "";
+    return;
+  }
+
   document.getElementById("status").innerText =
-    `年齢:${state.age} 金:${state.money} HP:${state.hp} 幸福:${state.happiness} 知性:${state.intellect} 子供:${state.children}`;
+    `年齢:${state.age} 金:${state.money} HP:${state.hp} 幸福:${state.happiness} 子供:${state.children}`;
 
   const event = pickEvent();
 
-  document.getElementById("event").innerText = event.text(state);
+  document.getElementById("event").innerText =
+    typeof event.text === "function" ? event.text(state) : event.text;
+
+  document.getElementById("image").src =
+    typeof event.image === "function" ? event.image(state) : event.image;
 
   const div = document.getElementById("choices");
   div.innerHTML = "";
+
+  if (event.auto) {
+    const result = event.effect(state);
+
+    const btn = document.createElement("button");
+    btn.innerText = result + " → 次へ";
+    btn.onclick = draw;
+
+    div.appendChild(btn);
+    return;
+  }
 
   event.choices.forEach(c => {
     const btn = document.createElement("button");
