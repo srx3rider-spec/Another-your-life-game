@@ -1,26 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Another Your Life</title>
-<style>
-body { font-family: sans-serif; }
-button { margin:5px; padding:10px; }
-img { display:block; margin:10px 0; }
-</style>
-</head>
-<body>
-
-<h1>Another Your Life</h1>
-
-<div id="status"></div>
-<img id="image" width="300">
-<div id="event"></div>
-<div id="choices"></div>
-
 <script>
 
-// ================= 状態 =================
+// 状態
 let state = {
   age: 15,
   hp: 100,
@@ -28,13 +8,13 @@ let state = {
   alive: true
 };
 
-// ================= 画像 =================
+// 画像
 function setImage(){
   document.getElementById("image").src =
     "https://picsum.photos/300?random=" + Math.random();
 }
 
-// ================= 描画 =================
+// 描画
 function draw(){
 
   setImage();
@@ -56,7 +36,7 @@ function draw(){
   const div = document.getElementById("choices");
   div.innerHTML = "";
 
-  // 🎲 サイコロイベント
+  // 🎲 サイコロ
   if(e.dice){
     const btn = document.createElement("button");
     btn.innerText = "🎲 運命に任せる";
@@ -73,7 +53,7 @@ function draw(){
     return;
   }
 
-  // 通常選択
+  // 通常
   e.choices.forEach(c=>{
     const btn = document.createElement("button");
     btn.innerText = c.text;
@@ -85,7 +65,7 @@ function draw(){
   });
 }
 
-// ================= 次へ =================
+// 次へ
 function next(){
   state.age++;
 
@@ -96,16 +76,22 @@ function next(){
   draw();
 }
 
-// ================= イベント選択 =================
+// 🔥イベント選択（ここが重要）
 function pickEvent(){
+
+  // ★ 20%で強制サイコロ
+  if(Math.random() < 0.2){
+    return EVENTS.find(e => e.dice);
+  }
+
   const valid = EVENTS.filter(e => !e.condition || e.condition(state));
+
   return valid[Math.floor(Math.random() * valid.length)];
 }
 
-// ================= イベント =================
+// イベント
 const EVENTS = [
 
-  // 学生
   {
     condition: s => s.age < 18,
     text: "学生生活",
@@ -115,7 +101,6 @@ const EVENTS = [
     ]
   },
 
-  // 社会人
   {
     condition: s => s.age >= 18,
     text: "仕事のストレス",
@@ -125,7 +110,6 @@ const EVENTS = [
     ]
   },
 
-  // 恋愛
   {
     text: "恋のチャンス",
     choices: [
@@ -134,33 +118,25 @@ const EVENTS = [
     ]
   },
 
-  // 🎲 運命イベント
-  {
-    text: "事故が起きた（運命）",
-    dice: true,
-    success: s => {
-      s.hp -= 20;
-    },
-    fail: s => {
-      s.hp -= 5;
-    }
-  },
-
-  // 大金イベント
   {
     text: "宝くじを見つけた",
     choices: [
       { text:"換金する", effect:s=>{ s.happiness+=20 }},
       { text:"無視する", effect:s=>{} }
     ]
+  },
+
+  // 🎲 サイコロ（確実に使う）
+  {
+    text: "事故が起きた（運命）",
+    dice: true,
+    success: s => { s.hp -= 20; },
+    fail: s => { s.hp -= 5; }
   }
 
 ];
 
-// ================= 起動 =================
+// 起動
 draw();
 
 </script>
-
-</body>
-</html>
