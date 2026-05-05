@@ -1,23 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Another Your Life</title>
+<style>
+body {
+  background:#400;
+  color:#fff;
+  font-family:sans-serif;
+  padding:20px;
+}
+.card {
+  background:#222;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
+}
+button {
+  display:block;
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border:none;
+  border-radius:8px;
+  background:#3b7ddd;
+  color:#fff;
+  font-size:16px;
+}
+img {
+  width:100%;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+</style>
+</head>
+<body>
+
+<h2>Another Your Life</h2>
+
+<div id="stats" class="card"></div>
+<img id="image">
+<div id="event" class="card"></div>
+<div id="choices"></div>
+
 <script>
 
-// 状態
+// ================= 状態 =================
 let state = {
+  name: "吉田 稔",
   age: 15,
   hp: 100,
   happiness: 50,
   alive: true
 };
 
-// 画像
-function setImage(){
+// ================= 画像 =================
+function setImage(type){
+  const map = {
+    student: "school",
+    work: "office",
+    love: "couple",
+    accident: "accident",
+    money: "money",
+    life: "life"
+  };
+
+  const keyword = map[type] || "life";
+
   document.getElementById("image").src =
-    "https://picsum.photos/300?random=" + Math.random();
+    "https://picsum.photos/600?random=" + keyword + Math.random();
 }
 
-// 描画
+// ================= 描画 =================
 function draw(){
-
-  setImage();
 
   if(!state.alive){
     document.getElementById("event").innerText =
@@ -26,10 +81,12 @@ function draw(){
     return;
   }
 
-  document.getElementById("status").innerText =
-    `年齢:${state.age} HP:${state.hp} 幸福:${state.happiness}`;
+  document.getElementById("stats").innerText =
+    `${state.name} | 年齢:${state.age} HP:${state.hp} 幸福:${state.happiness}`;
 
   const e = pickEvent();
+
+  setImage(e.type);
 
   document.getElementById("event").innerText = e.text;
 
@@ -53,7 +110,7 @@ function draw(){
     return;
   }
 
-  // 通常
+  // 通常選択
   e.choices.forEach(c=>{
     const btn = document.createElement("button");
     btn.innerText = c.text;
@@ -65,7 +122,7 @@ function draw(){
   });
 }
 
-// 次へ
+// ================= 次へ =================
 function next(){
   state.age++;
 
@@ -76,10 +133,10 @@ function next(){
   draw();
 }
 
-// 🔥イベント選択（ここが重要）
+// ================= イベント選択 =================
 function pickEvent(){
 
-  // ★ 20%で強制サイコロ
+  // 🎲 20%で強制サイコロ
   if(Math.random() < 0.2){
     return EVENTS.find(e => e.dice);
   }
@@ -89,10 +146,12 @@ function pickEvent(){
   return valid[Math.floor(Math.random() * valid.length)];
 }
 
-// イベント
+// ================= イベント =================
 const EVENTS = [
 
+  // 学生
   {
+    type: "student",
     condition: s => s.age < 18,
     text: "学生生活",
     choices: [
@@ -101,7 +160,9 @@ const EVENTS = [
     ]
   },
 
+  // 社会人
   {
+    type: "work",
     condition: s => s.age >= 18,
     text: "仕事のストレス",
     choices: [
@@ -110,7 +171,9 @@ const EVENTS = [
     ]
   },
 
+  // 恋愛
   {
+    type: "love",
     text: "恋のチャンス",
     choices: [
       { text:"告白", effect:s=>{ s.happiness+=10 }},
@@ -118,7 +181,9 @@ const EVENTS = [
     ]
   },
 
+  // 宝くじ
   {
+    type: "money",
     text: "宝くじを見つけた",
     choices: [
       { text:"換金する", effect:s=>{ s.happiness+=20 }},
@@ -126,8 +191,9 @@ const EVENTS = [
     ]
   },
 
-  // 🎲 サイコロ（確実に使う）
+  // 🎲 運命（事故）
   {
+    type: "accident",
     text: "事故が起きた（運命）",
     dice: true,
     success: s => { s.hp -= 20; },
@@ -136,7 +202,10 @@ const EVENTS = [
 
 ];
 
-// 起動
+// ================= 起動 =================
 draw();
 
 </script>
+
+</body>
+</html>
