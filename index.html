@@ -30,7 +30,8 @@ let state = {
 function advanceTime() {
   state.age += 1;
 
-  if (state.hp <= 0 || state.age > 80) {
+  if (state.hp <= 0 || state.age > 120)
+  {
     document.getElementById("event").innerText =
       "あなたは" + state.age + "歳で死亡した";
     document.getElementById("choices").innerHTML = "";
