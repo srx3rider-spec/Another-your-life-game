@@ -1,4 +1,27 @@
-const EVENTS = [
+
+ const EVENTS = [
+  {
+    text: s => "今日はどうする？",
+    choices: [
+      {
+        text: "勉強する",
+        effect: s => {
+          s.intellect += 5;
+          s.hp -= 2;
+          advanceTime();
+        }
+      },
+      {
+        text: "遊ぶ",
+        effect: s => {
+          s.happiness += 5;
+          s.hp -= 1;
+          advanceTime();
+        }
+      }
+    ]
+  }
+];
   {
     id: "school_life",
     phase: "student",
