@@ -21,16 +21,19 @@ body{
 }
 button{
   width:100%;
-  margin:5px 0;
-  padding:10px;
+  margin:6px 0;
+  padding:12px;
   background:#3b7ddd;
   color:#fff;
   border:none;
   border-radius:8px;
+  font-size:16px;
 }
 img{
   width:100%;
+  height:auto;
   margin-bottom:10px;
+  border-radius:8px;
 }
 </style>
 
@@ -40,17 +43,21 @@ img{
 
 <h2>Another Your Life</h2>
 
-<div class="card" id="status">読み込み中...</div>
-<img id="image">
-<div class="card" id="event">読み込み中...</div>
-<div id="dice"></div>
+<div class="card" id="status"></div>
+<img id="image" src="">
+<div class="card" id="event"></div>
+<div id="dice" class="card"></div>
 <div id="choices"></div>
 
 <script>
-// ===== DOM取得 =====
-const event = document.getElementById("event");
-const choices = document.getElementById("choices");
-const dice = document.getElementById("dice");
+
+// ===== DOM =====
+const statusEl = document.getElementById("status");
+const eventEl = document.getElementById("event");
+const choicesEl = document.getElementById("choices");
+const diceEl = document.getElementById("dice");
+const imageEl = document.getElementById("image");
+
 // ===== 状態 =====
 let state = {
   age:15,
@@ -59,92 +66,100 @@ let state = {
   happiness:50
 };
 
-// ===== 画像 =====
+// ===== 画像（確実に出る）=====
 function setImage(type){
-  const map={
-    student:"school",
-    work:"office",
-    love:"couple",
-    money:"money",
-    accident:"accident"
+  const map = {
+    student: "https://picsum.photos/seed/student/800/400",
+    work: "https://picsum.photos/seed/work/800/400",
+    love: "https://picsum.photos/seed/love/800/400",
+    money: "https://picsum.photos/seed/money/800/400",
+    accident: "https://picsum.photos/seed/accident/800/400"
   };
-
-  const key = map[type] || "life";
-
-  document.getElementById("image").src =
-    "https://source.unsplash.com/800x400/?"+key;
+  imageEl.src = map[type] || "https://picsum.photos/800/400";
 }
 
 // ===== 表示 =====
 function updateStatus(){
-  document.getElementById("status").innerText =
+  statusEl.innerText =
     `年齢:${state.age} HP:${state.hp} 金:${state.money} 幸福:${state.happiness}`;
 }
 
-// ===== メイン =====
+// ===== 次へ =====
 function next(){
 
-  // 死亡判定
+  // 死亡 or 終了
   if(state.hp <= 0){
-    document.getElementById("event").innerText="💀 死亡";
-    document.getElementById("choices").innerHTML="";
+    eventEl.innerText="💀 死亡";
+    choicesEl.innerHTML="";
+    diceEl.innerText="";
+    return;
+  }
+
+  if(state.age >= 80){
+    eventEl.innerText="🏁 人生を全うした";
+    choicesEl.innerHTML="";
+    diceEl.innerText="";
     return;
   }
 
   state.age++;
 
-  const r = Math.random();
-
-  // ===== 学生 =====
+  // ===== 学生フェーズ =====
   if(state.age < 18){
-
     setImage("student");
-    event.innerText="勉強する？";
+    eventEl.innerText="学校生活";
 
-    choices.innerHTML="";
+    diceEl.innerText="";
+    choicesEl.innerHTML="";
 
-    addChoice("勉強",()=>{
-      state.happiness+=2;
-      next();
+    addChoice("勉強", ()=>{
+      state.happiness += 2;
+      proceed();
     });
 
-    addChoice("遊ぶ",()=>{
-      state.hp-=5;
-      state.happiness+=5;
-      next();
+    addChoice("遊ぶ", ()=>{
+      state.hp -= 5;
+      state.happiness += 5;
+      proceed();
     });
 
     updateStatus();
     return;
   }
 
+  // ===== ランダムイベント =====
+  const r = Math.random();
+
   // ===== サイコロイベント =====
   if(r < 0.3){
 
     setImage("money");
-    event.innerText="宝くじを拾った";
-    choices.innerHTML="";
-    dice.innerText="";
+    eventEl.innerText="宝くじを拾った";
 
-    addChoice("🎲 運命に任せる",()=>{
+    choicesEl.innerHTML="";
+    diceEl.innerText="";
+
+    addChoice("🎲 運命に任せる", ()=>{
 
       const d = Math.floor(Math.random()*6)+1;
 
       if(d <= 2){
-        dice.innerText="ハズレ";
-      }else if(d <=4){
-        state.money+=20;
-        dice.innerText="小当たり";
-      }else{
-        state.money+=100;
-        dice.innerText="大当たり！";
+        diceEl.innerText="🎲 ハズレ";
+      } else if(d <=4){
+        state.money += 20;
+        diceEl.innerText="🎲 小当たり";
+      } else {
+        state.money += 100;
+        state.happiness += 10;
+        diceEl.innerText="🎲 大当たり！";
       }
 
       updateStatus();
 
+      // ★ 1回で終わる（ループ防止）
       setTimeout(()=>{
-        dice.innerText="";
-        next();
+        diceEl.innerText="";
+        proceed();
       },1000);
     });
 
@@ -153,31 +168,46 @@ function next(){
   }
 
   // ===== 通常イベント =====
-  setImage("work");
-  event.innerText="仕事がつらい";
+  const events = [
+    {text:"仕事がつらい", type:"work", hp:-10, money:+30},
+    {text:"恋人とデート", type:"love", hp:+5, happiness:+10},
+    {text:"副業が成功した", type:"money", money:+50},
+    {text:"事故にあった", type:"accident", hp:-20}
+  ];
 
-  choices.innerHTML="";
+  const e = events[Math.floor(Math.random()*events.length)];
 
-  addChoice("頑張る",()=>{
-    state.money+=30;
-    state.hp-=10;
-    next();
+  setImage(e.type);
+  eventEl.innerText = e.text;
+
+  diceEl.innerText="";
+  choicesEl.innerHTML="";
+
+  addChoice("対応する", ()=>{
+    state.hp += (e.hp || 0);
+    state.money += (e.money || 0);
+    state.happiness += (e.happiness || 0);
+    proceed();
   });
 
-  addChoice("休む",()=>{
-    state.hp+=10;
-    next();
+  addChoice("無視する", ()=>{
+    proceed();
   });
 
   updateStatus();
 }
 
-// ===== ボタン生成 =====
+// ===== 共通進行 =====
+function proceed(){
+  next();
+}
+
+// ===== ボタン =====
 function addChoice(text,fn){
   const btn = document.createElement("button");
   btn.innerText=text;
   btn.onclick=fn;
-  choices.appendChild(btn);
+  choicesEl.appendChild(btn);
 }
 
 // ===== 起動 =====
