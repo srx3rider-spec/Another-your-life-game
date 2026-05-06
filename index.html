@@ -10,45 +10,39 @@ body{
   color:#fff;
   font-family:sans-serif;
   padding:20px;
-  max-width:700px;
+  max-width:600px;
   margin:auto;
 }
 .card{
   background:#222;
   padding:15px;
-  margin-bottom:15px;
+  margin-bottom:10px;
   border-radius:10px;
 }
 button{
   width:100%;
-  margin:8px 0;
-  padding:12px;
-  border:none;
-  border-radius:8px;
+  margin:5px 0;
+  padding:10px;
   background:#3b7ddd;
   color:#fff;
-  font-size:16px;
+  border:none;
+  border-radius:8px;
 }
 img{
   width:100%;
-  border-radius:10px;
   margin-bottom:10px;
 }
-#dice{
-  text-align:center;
-  font-size:22px;
-  margin:10px;
-}
 </style>
+
 </head>
 
 <body>
 
 <h2>Another Your Life</h2>
 
-<div class="card" id="status"></div>
+<div class="card" id="status">読み込み中...</div>
 <img id="image">
-<div class="card" id="event"></div>
+<div class="card" id="event">読み込み中...</div>
 <div id="dice"></div>
 <div id="choices"></div>
 
@@ -62,57 +56,12 @@ let state = {
   happiness:50
 };
 
-// ===== イベント定義（全部入り）=====
-const EVENTS = [
-
-{type:"student", text:"勉強する？",
-choices:[
-{text:"勉強",effect:s=>{s.happiness+=2;}},
-{text:"遊ぶ",effect:s=>{s.happiness+=5; s.hp-=3;}}
-]},
-
-{type:"love", text:"好きな人がいる",
-choices:[
-{text:"告白",effect:s=>{s.happiness+=15;}},
-{text:"諦める",effect:s=>{s.happiness-=3;}}
-]},
-
-{type:"work", text:"仕事が忙しい",
-choices:[
-{text:"頑張る",effect:s=>{s.money+=30; s.hp-=5;}},
-{text:"休む",effect:s=>{s.hp+=5;}}
-]},
-
-{type:"health", text:"体調が悪い",
-choices:[
-{text:"休む",effect:s=>{s.hp+=10;}},
-{text:"無理する",effect:s=>{s.hp-=10; s.money+=10;}}
-]},
-
-{type:"money", dice:true, text:"宝くじを拾った",
-resolve:(r,s)=>{
-if(r<=2){return"ハズレ";}
-if(r<=4){s.money+=20;return"小当たり";}
-s.money+=100;return"大当たり！";
-}},
-
-{type:"accident", dice:true, text:"事故が起きた",
-resolve:(r,s)=>{
-if(r<=2){s.hp-=20;return"ケガ";}
-if(r<=4){s.hp-=10;return"軽傷";}
-return"無傷！";
-}}
-
-];
-
-// ===== 画像（ちゃんと意味ある）=====
+// ===== 画像 =====
 function setImage(type){
-
   const map={
     student:"school",
-    love:"couple",
     work:"office",
-    health:"hospital",
+    love:"couple",
     money:"money",
     accident:"accident"
   };
@@ -123,89 +72,112 @@ function setImage(type){
     "https://source.unsplash.com/800x400/?"+key;
 }
 
-// ===== ステータス表示 =====
+// ===== 表示 =====
 function updateStatus(){
-  status.innerText =
-  `年齢:${state.age}  HP:${state.hp}  金:${state.money}  幸福:${state.happiness}`;
+  document.getElementById("status").innerText =
+    `年齢:${state.age} HP:${state.hp} 金:${state.money} 幸福:${state.happiness}`;
 }
 
-// ===== 年齢ごとのイベント制御 =====
-function pickEvent(){
-
-  if(state.age < 18){
-    return EVENTS.filter(e=>e.type==="student"||e.type==="love");
-  }
-
-  if(state.age < 60){
-    return EVENTS;
-  }
-
-  return EVENTS.filter(e=>e.type!=="student");
-}
-
-// ===== メイン処理 =====
+// ===== メイン =====
 function next(){
 
+  // 死亡判定
   if(state.hp <= 0){
-    event.innerText="💀 死亡エンド";
-    choices.innerHTML="";
-    return;
-  }
-
-  if(state.age > 80){
-    event.innerText="🏁 人生完走エンド";
-    choices.innerHTML="";
+    document.getElementById("event").innerText="💀 死亡";
+    document.getElementById("choices").innerHTML="";
     return;
   }
 
   state.age++;
 
-  const pool = pickEvent();
-  const e = pool[Math.floor(Math.random()*pool.length)];
+  const r = Math.random();
 
-  setImage(e.type);
-  event.innerText = e.text;
+  // ===== 学生 =====
+  if(state.age < 18){
 
-  choices.innerHTML="";
-  dice.innerText="";
+    setImage("student");
+    event.innerText="勉強する？";
 
-  // ===== サイコロイベント =====
-  if(e.dice){
+    choices.innerHTML="";
 
-    const btn=document.createElement("button");
-    btn.innerText="🎲 運命に任せる";
+    addChoice("勉強",()=>{
+      state.happiness+=2;
+      next();
+    });
 
-    btn.onclick=()=>{
-      const r=Math.floor(Math.random()*6)+1;
-      const result=e.resolve(r,state);
+    addChoice("遊ぶ",()=>{
+      state.hp-=5;
+      state.happiness+=5;
+      next();
+    });
 
-      dice.innerText=`🎲 ${r} → ${result}`;
-
-      updateStatus();
-
-      setTimeout(next,1000);
-    };
-
-    choices.appendChild(btn);
+    updateStatus();
     return;
   }
 
-  // ===== 通常選択 =====
-  e.choices.forEach(c=>{
-    const btn=document.createElement("button");
-    btn.innerText=c.text;
+  // ===== サイコロイベント =====
+  if(r < 0.3){
 
-    btn.onclick=()=>{
-      c.effect(state);
+    setImage("money");
+    event.innerText="宝くじを拾った";
+    choices.innerHTML="";
+    dice.innerText="";
+
+    addChoice("🎲 運命に任せる",()=>{
+
+      const d = Math.floor(Math.random()*6)+1;
+
+      if(d <= 2){
+        dice.innerText="ハズレ";
+      }else if(d <=4){
+        state.money+=20;
+        dice.innerText="小当たり";
+      }else{
+        state.money+=100;
+        dice.innerText="大当たり！";
+      }
+
       updateStatus();
-      next();
-    };
 
-    choices.appendChild(btn);
+      setTimeout(()=>{
+        dice.innerText="";
+        next();
+      },1000);
+    });
+
+    updateStatus();
+    return;
+  }
+
+  // ===== 通常イベント =====
+  setImage("work");
+  event.innerText="仕事がつらい";
+
+  choices.innerHTML="";
+
+  addChoice("頑張る",()=>{
+    state.money+=30;
+    state.hp-=10;
+    next();
   });
+
+  addChoice("休む",()=>{
+    state.hp+=10;
+    next();
+  });
+
+  updateStatus();
 }
 
-// ===== 初期化 =====
+// ===== ボタン生成 =====
+function addChoice(text,fn){
+  const btn = document.createElement("button");
+  btn.innerText=text;
+  btn.onclick=fn;
+  choices.appendChild(btn);
+}
+
+// ===== 起動 =====
 updateStatus();
 next();
 
