@@ -5,34 +5,10 @@
 <title>Another Your Life</title>
 
 <style>
-body{
-  background:#300;
-  color:#fff;
-  font-family:sans-serif;
-  padding:20px;
-  max-width:600px;
-  margin:auto;
-}
-.card{
-  background:#222;
-  padding:15px;
-  margin-bottom:10px;
-  border-radius:10px;
-}
-button{
-  width:100%;
-  margin:5px 0;
-  padding:10px;
-  background:#3b7ddd;
-  color:#fff;
-  border:none;
-  border-radius:8px;
-}
-img{
-  width:100%;
-  margin-bottom:10px;
-  border-radius:10px;
-}
+body{background:#300;color:#fff;font-family:sans-serif;padding:20px;max-width:600px;margin:auto;}
+.card{background:#222;padding:15px;margin-bottom:10px;border-radius:10px;}
+button{width:100%;margin:5px 0;padding:10px;background:#3b7ddd;color:#fff;border:none;border-radius:8px;}
+img{width:100%;margin-bottom:10px;border-radius:10px;}
 </style>
 </head>
 
@@ -40,188 +16,146 @@ img{
 
 <h2>Another Your Life</h2>
 
-<div class="card" id="status"></div>
-<img id="image">
-<div class="card" id="event"></div>
-<div id="choices"></div>
+<div class="card">
+  <button onclick="startGame()">人生スタート</button>
+</div>
+
+<div id="game" style="display:none;">
+  <div class="card" id="status"></div>
+  <img id="image">
+  <div class="card" id="event"></div>
+  <div id="choices"></div>
+</div>
+
+<div class="card">
+  <h3>後悔分岐</h3>
+  <input id="branchAge" placeholder="年齢 (例:18)">
+  <button onclick="branch()">別の人生を見る</button>
+</div>
 
 <script>
 
 // ===== 状態 =====
-let state = {
-  age:15,
-  hp:100,
-  money:50,
-  happiness:50,
-  hasPartner:false
-};
+let state;
+let history = [];
 
-// ===== 画像（完全固定ジャンル）=====
+// ===== 画像 =====
 function setImage(type){
-
-  const images = {
-    student: "https://picsum.photos/seed/student/800/400",
-    work: "https://picsum.photos/seed/office/800/400",
-    love: "https://picsum.photos/seed/couple/800/400",
-    accident: "https://picsum.photos/seed/accident/800/400",
-    money: "https://picsum.photos/seed/money/800/400"
-  };
-
-  document.getElementById("image").src = images[type] || images.work;
+  document.getElementById("image").src =
+    "https://picsum.photos/seed/"+type+"/800/400";
 }
 
-// ===== 表示 =====
+// ===== ステータス =====
 function updateStatus(){
-  document.getElementById("status").innerText =
+  status.innerText =
     `年齢:${state.age} HP:${state.hp} 金:${state.money} 幸福:${state.happiness}`;
 }
 
-// ===== イベント定義（条件付き）=====
+// ===== スタート =====
+function startGame(){
+  state = {
+    age:3,
+    hp:100,
+    money:50,
+    happiness:50,
+    hasPartner:false,
+    lastEvent:null
+  };
+  history = [];
+  game.style.display="block";
+  next();
+}
+
+// ===== イベント =====
 const events = [
 
   {
-    text:"好きな人と出会った",
-    type:"love",
-    condition:s => !s.hasPartner && s.age >=18,
+    id:"toy",
+    text:"おもちゃを欲しがっている",
+    type:"child",
+    condition:s=>s.age<6,
     choices:[
-      {
-        text:"付き合う",
-        effect:s=>{
-          s.hasPartner=true;
-          s.happiness+=10;
-        }
-      },
-      {
-        text:"見送る",
-        effect:s=>{
-          s.happiness-=2;
-        }
-      }
+      {text:"買う", effect:s=>{s.happiness+=10;s.money-=10}},
+      {text:"我慢", effect:s=>{s.happiness-=3}}
     ]
   },
 
   {
+    id:"study",
+    text:"勉強する？",
+    type:"student",
+    condition:s=>s.age<18,
+    choices:[
+      {text:"勉強", effect:s=>{s.happiness+=2}},
+      {text:"遊ぶ", effect:s=>{s.hp-=5;s.happiness+=5}}
+    ]
+  },
+
+  {
+    id:"love",
+    text:"恋人と出会った",
+    type:"love",
+    condition:s=>!s.hasPartner && s.age>=18,
+    choices:[
+      {text:"付き合う", effect:s=>{s.hasPartner=true;s.happiness+=10}},
+      {text:"スルー", effect:s=>{s.happiness-=2}}
+    ]
+  },
+
+  {
+    id:"date",
     text:"恋人とデート",
     type:"love",
-    condition:s => s.hasPartner,
+    condition:s=>s.hasPartner,
     choices:[
-      {
-        text:"楽しむ",
-        effect:s=>{
-          s.happiness+=15;
-        }
-      },
-      {
-        text:"仕事優先",
-        effect:s=>{
-          s.money+=20;
-          s.happiness-=5;
-        }
-      }
+      {text:"楽しむ", effect:s=>{s.happiness+=15}},
+      {text:"仕事優先", effect:s=>{s.money+=20;s.happiness-=5}}
     ]
   },
 
   {
+    id:"work",
     text:"仕事がつらい",
     type:"work",
-    condition:s => s.age >=18,
+    condition:s=>s.age>=18,
     choices:[
-      {
-        text:"頑張る",
-        effect:s=>{
-          s.money+=30;
-          s.hp-=10;
-        }
-      },
-      {
-        text:"休む",
-        effect:s=>{
-          s.hp+=10;
-        }
-      }
+      {text:"頑張る", effect:s=>{s.money+=30;s.hp-=10}},
+      {text:"休む", effect:s=>{s.hp+=10}}
     ]
   },
 
   {
+    id:"accident",
     text:"事故にあった",
     type:"accident",
-    condition:s => true,
+    condition:s=>true,
     choices:[
-      {
-        text:"治療する",
-        effect:s=>{
-          s.hp+=10;
-          s.money-=20;
-        }
-      },
-      {
-        text:"放置する",
-        effect:s=>{
-          s.hp-=15;
-        }
-      }
-    ]
-  },
-
-  {
-    text:"お金を拾った",
-    type:"money",
-    condition:s => true,
-    choices:[
-      {
-        text:"拾う",
-        effect:s=>{
-          s.money+=50;
-        }
-      },
-      {
-        text:"無視",
-        effect:s=>{
-          s.happiness+=2;
-        }
-      }
+      {text:"治療", effect:s=>{s.hp+=10;s.money-=20}},
+      {text:"放置", effect:s=>{s.hp-=15}}
     ]
   }
 
 ];
 
-// ===== イベント選択 =====
+// ===== 抽選 =====
 function pickEvent(){
-  const list = events.filter(e => e.condition(state));
-  return list[Math.floor(Math.random()*list.length)];
+  let list = events.filter(e=>e.condition(state));
+  list = list.filter(e=>e.id!==state.lastEvent);
+  const e = list[Math.floor(Math.random()*list.length)];
+  state.lastEvent = e.id;
+  return e;
 }
 
 // ===== メイン =====
 function next(){
 
-  if(state.hp <= 0){
-    document.getElementById("event").innerText="💀 死亡";
-    document.getElementById("choices").innerHTML="";
+  if(state.hp<=0){
+    event.innerText="💀 死亡";
+    choices.innerHTML="";
     return;
   }
 
   state.age++;
-
-  // 学生フェーズ
-  if(state.age < 18){
-    setImage("student");
-    event.innerText="勉強する？";
-    choices.innerHTML="";
-
-    addChoice("勉強",()=>{
-      state.happiness+=2;
-      next();
-    });
-
-    addChoice("遊ぶ",()=>{
-      state.hp-=5;
-      state.happiness+=5;
-      next();
-    });
-
-    updateStatus();
-    return;
-  }
 
   const e = pickEvent();
 
@@ -230,26 +164,66 @@ function next(){
   choices.innerHTML="";
 
   e.choices.forEach(c=>{
-    addChoice(c.text,()=>{
+    const btn=document.createElement("button");
+    btn.innerText=c.text;
+
+    btn.onclick=()=>{
+      // 履歴保存（超重要）
+      history.push({
+        age:state.age,
+        event:e.id,
+        choice:c.text,
+        snapshot:JSON.parse(JSON.stringify(state))
+      });
+
       c.effect(state);
       next();
-    });
+    };
+
+    choices.appendChild(btn);
   });
 
   updateStatus();
 }
 
-// ===== ボタン =====
-function addChoice(text,fn){
-  const btn = document.createElement("button");
-  btn.innerText=text;
-  btn.onclick=fn;
-  choices.appendChild(btn);
-}
+// ===== 分岐 =====
+function branch(){
 
-// ===== 起動 =====
-updateStatus();
-next();
+  const targetAge = parseInt(branchAge.value);
+
+  const point = history.find(h=>h.age>=targetAge);
+
+  if(!point){
+    alert("その年齢のデータがない");
+    return;
+  }
+
+  let sim = JSON.parse(JSON.stringify(point.snapshot));
+
+  // 別選択（逆にする）
+  sim.hasPartner = !sim.hasPartner;
+  sim.happiness -= 10;
+
+  let log = [];
+
+  for(let i=0;i<10;i++){
+    const e = events[Math.floor(Math.random()*events.length)];
+    log.push(e.text);
+    e.choices[0].effect(sim);
+  }
+
+  // ===== 比較 =====
+  alert(
+`▼元の人生
+金:${state.money} 幸福:${state.happiness}
+
+▼別の人生
+金:${sim.money} 幸福:${sim.happiness}
+
+--- 分岐後の出来事 ---
+${log.join("\n")}
+`);
+}
 
 </script>
 
