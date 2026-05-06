@@ -43,7 +43,7 @@ img{
 <!-- 初期画面 -->
 <div id="start" class="card">
   <p>人生を開始しますか？</p>
-  <button onclick="startGame()">スタート</button>
+  <button id="startBtn">スタート</button>
 </div>
 
 <!-- ゲーム -->
@@ -56,13 +56,20 @@ img{
 
 <script>
 
+// ===== DOMキャッシュ（これ重要） =====
+const startDiv = document.getElementById("start");
+const gameDiv = document.getElementById("game");
+const statusDiv = document.getElementById("status");
+const eventDiv = document.getElementById("event");
+const choicesDiv = document.getElementById("choices");
+const imageEl = document.getElementById("image");
+
 // ===== 状態 =====
 let state;
-let history=[];
 
 // ===== スタート =====
-function startGame(){
-  state={
+document.getElementById("startBtn").onclick = () => {
+  state = {
     age:3,
     hp:100,
     money:50,
@@ -70,31 +77,29 @@ function startGame(){
     hasPartner:false
   };
 
-  history=[];
-  document.getElementById("start").style.display="none";
-  document.getElementById("game").style.display="block";
+  startDiv.style.display="none";
+  gameDiv.style.display="block";
 
   next();
-}
+};
 
 // ===== 画像 =====
 function setImage(keyword){
-  document.getElementById("image").src =
-    "https://picsum.photos/seed/"+keyword+"/800/400";
+  imageEl.src = "https://picsum.photos/seed/"+keyword+"/800/400";
 }
 
 // ===== 表示 =====
 function updateStatus(){
-  status.innerText =
+  statusDiv.innerText =
     `年齢:${state.age} HP:${state.hp} 金:${state.money} 幸福:${state.happiness}`;
 }
 
-// ===== イベント =====
+// ===== メイン =====
 function next(){
 
   if(state.hp<=0){
-    event.innerText="💀 死亡";
-    choices.innerHTML="";
+    eventDiv.innerText="💀 死亡";
+    choicesDiv.innerHTML="";
     return;
   }
 
@@ -102,7 +107,6 @@ function next(){
 
   let e;
 
-  // ===== 幼少 =====
   if(state.age < 6){
     e={
       text:"おもちゃが欲しい",
@@ -114,7 +118,6 @@ function next(){
     };
   }
 
-  // ===== 学生 =====
   else if(state.age < 18){
     e={
       text:"勉強する？",
@@ -126,19 +129,17 @@ function next(){
     };
   }
 
-  // ===== 恋愛発生 =====
   else if(!state.hasPartner && Math.random()<0.4){
     e={
       text:"素敵な人と出会った",
       img:"love",
       choices:[
         {text:"付き合う", fn:()=>{state.hasPartner=true;state.happiness+=10;next();}},
-        {text:"やめる", fn:()=>{next();}}
+        {text:"見送る", fn:()=>{next();}}
       ]
     };
   }
 
-  // ===== 恋人あり =====
   else if(state.hasPartner && Math.random()<0.5){
     e={
       text:"恋人とデート",
@@ -150,7 +151,6 @@ function next(){
     };
   }
 
-  // ===== 事故 =====
   else if(Math.random()<0.2){
     e={
       text:"事故にあった",
@@ -162,7 +162,6 @@ function next(){
     };
   }
 
-  // ===== 通常 =====
   else{
     e={
       text:"仕事がつらい",
@@ -174,16 +173,16 @@ function next(){
     };
   }
 
-  // ===== 表示 =====
+  // ===== 描画 =====
   setImage(e.img);
-  event.innerText=e.text;
-  choices.innerHTML="";
+  eventDiv.innerText=e.text;
+  choicesDiv.innerHTML="";
 
   e.choices.forEach(c=>{
     const btn=document.createElement("button");
     btn.innerText=c.text;
     btn.onclick=c.fn;
-    choices.appendChild(btn);
+    choicesDiv.appendChild(btn);
   });
 
   updateStatus();
