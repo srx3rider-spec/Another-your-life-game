@@ -22,16 +22,17 @@ body{
 button{
   width:100%;
   margin:5px 0;
-  padding:10px;
+  padding:12px;
   background:#3b7ddd;
   color:#fff;
   border:none;
   border-radius:8px;
+  font-size:16px;
 }
 img{
   width:100%;
-  margin-bottom:10px;
   border-radius:10px;
+  margin-bottom:10px;
 }
 </style>
 </head>
@@ -40,13 +41,11 @@ img{
 
 <h2>Another Your Life</h2>
 
-<!-- 初期画面 -->
 <div id="start" class="card">
-  <p>人生を開始しますか？</p>
-  <button id="startBtn">スタート</button>
+  <p>人生を開始する</p>
+  <button onclick="startGame()">スタート</button>
 </div>
 
-<!-- ゲーム -->
 <div id="game" style="display:none;">
   <div class="card" id="status"></div>
   <img id="image">
@@ -56,50 +55,53 @@ img{
 
 <script>
 
-// ===== DOMキャッシュ（これ重要） =====
-const startDiv = document.getElementById("start");
-const gameDiv = document.getElementById("game");
-const statusDiv = document.getElementById("status");
-const eventDiv = document.getElementById("event");
-const choicesDiv = document.getElementById("choices");
-const imageEl = document.getElementById("image");
-
 // ===== 状態 =====
 let state;
 
 // ===== スタート =====
-document.getElementById("startBtn").onclick = () => {
+function startGame(){
   state = {
     age:3,
     hp:100,
     money:50,
     happiness:50,
-    hasPartner:false
+    study:0,
+    stress:0,
+    love:0,
+    injured:false,
+    job:null
   };
 
-  startDiv.style.display="none";
-  gameDiv.style.display="block";
+  document.getElementById("start").style.display="none";
+  document.getElementById("game").style.display="block";
 
   next();
-};
+}
+
+// ===== DOM =====
+const statusEl = document.getElementById("status");
+const eventEl = document.getElementById("event");
+const choicesEl = document.getElementById("choices");
+const imageEl = document.getElementById("image");
 
 // ===== 画像 =====
-function setImage(keyword){
-  imageEl.src = "https://picsum.photos/seed/"+keyword+"/800/400";
+function setImage(type){
+  imageEl.src = "https://picsum.photos/seed/"+type+"/800/400";
 }
 
 // ===== 表示 =====
 function updateStatus(){
-  statusDiv.innerText =
+  statusEl.innerText =
     `年齢:${state.age} HP:${state.hp} 金:${state.money} 幸福:${state.happiness}`;
 }
 
 // ===== メイン =====
 function next(){
 
-  if(state.hp<=0){
-    eventDiv.innerText="💀 死亡";
-    choicesDiv.innerHTML="";
+  if(state.hp <= 0){
+    setImage("death");
+    eventEl.innerText = "💀 人生終了";
+    choicesEl.innerHTML = "";
     return;
   }
 
@@ -107,82 +109,136 @@ function next(){
 
   let e;
 
+  // ===== 幼少 =====
   if(state.age < 6){
-    e={
+    e = {
       text:"おもちゃが欲しい",
       img:"toy",
       choices:[
         {text:"買う", fn:()=>{state.money-=10;state.happiness+=10;next();}},
-        {text:"我慢", fn:()=>{state.happiness-=2;next();}}
+        {text:"我慢", fn:()=>{state.stress+=5;next();}}
       ]
     };
   }
 
+  // ===== 学生 =====
   else if(state.age < 18){
-    e={
+    e = {
       text:"勉強する？",
       img:"school",
       choices:[
-        {text:"勉強", fn:()=>{state.happiness+=2;next();}},
-        {text:"遊ぶ", fn:()=>{state.hp-=5;state.happiness+=5;next();}}
+        {text:"勉強", fn:()=>{state.study+=10;state.stress+=5;next();}},
+        {text:"遊ぶ", fn:()=>{state.happiness+=10;state.study-=3;next();}}
       ]
     };
   }
 
-  else if(!state.hasPartner && Math.random()<0.4){
-    e={
-      text:"素敵な人と出会った",
-      img:"love",
+  // ===== 就職分岐 =====
+  else if(state.age === 18){
+    if(state.study > 50){
+      state.job = "good";
+      e = {
+        text:"良い会社に就職した",
+        img:"office",
+        choices:[
+          {text:"働く", fn:()=>{state.money+=50;next();}}
+        ]
+      };
+    }else{
+      state.job = "bad";
+      e = {
+        text:"仕事が見つからない",
+        img:"jobless",
+        choices:[
+          {text:"バイト", fn:()=>{state.money+=20;state.stress+=10;next();}}
+        ]
+      };
+    }
+  }
+
+  // ===== 恋愛 =====
+  else if(!state.love && Math.random()<0.3){
+    e = {
+      text:"恋に出会った",
+      img:"couple",
       choices:[
-        {text:"付き合う", fn:()=>{state.hasPartner=true;state.happiness+=10;next();}},
-        {text:"見送る", fn:()=>{next();}}
+        {text:"付き合う", fn:()=>{state.love=1;state.happiness+=20;next();}},
+        {text:"やめる", fn:()=>{next();}}
       ]
     };
   }
 
-  else if(state.hasPartner && Math.random()<0.5){
-    e={
-      text:"恋人とデート",
+  // ===== 恋人ありイベント =====
+  else if(state.love && Math.random()<0.4){
+    e = {
+      text:"恋人と過ごす",
       img:"date",
       choices:[
-        {text:"楽しむ", fn:()=>{state.happiness+=15;next();}},
+        {text:"優先する", fn:()=>{state.happiness+=15;state.money-=10;next();}},
         {text:"仕事優先", fn:()=>{state.money+=20;state.happiness-=5;next();}}
       ]
     };
   }
 
-  else if(Math.random()<0.2){
-    e={
-      text:"事故にあった",
+  // ===== ストレス事故 =====
+  else if(state.stress > 40 && Math.random()<0.5){
+    state.injured = true;
+
+    e = {
+      text:"ストレスで事故にあった",
       img:"accident",
       choices:[
-        {text:"治療", fn:()=>{state.hp+=10;state.money-=20;next();}},
-        {text:"放置", fn:()=>{state.hp-=15;next();}}
+        {text:"治療", fn:()=>{state.hp+=10;state.money-=30;state.injured=false;next();}},
+        {text:"放置", fn:()=>{state.hp-=20;next();}}
       ]
     };
   }
 
-  else{
-    e={
-      text:"仕事がつらい",
-      img:"office",
+  // ===== ケガ継続 =====
+  else if(state.injured){
+    e = {
+      text:"体調が悪い",
+      img:"hospital",
       choices:[
-        {text:"頑張る", fn:()=>{state.money+=30;state.hp-=10;next();}},
-        {text:"休む", fn:()=>{state.hp+=10;next();}}
+        {text:"治療する", fn:()=>{state.hp+=15;state.money-=20;state.injured=false;next();}},
+        {text:"我慢", fn:()=>{state.hp-=10;next();}}
       ]
     };
+  }
+
+  // ===== 通常仕事 =====
+  else{
+    if(state.job === "good"){
+      e = {
+        text:"仕事は順調",
+        img:"business",
+        choices:[
+          {text:"頑張る", fn:()=>{state.money+=40;state.stress+=10;next();}},
+          {text:"休む", fn:()=>{state.hp+=10;next();}}
+        ]
+      };
+    }else{
+      e = {
+        text:"生活が苦しい",
+        img:"poor",
+        choices:[
+          {text:"働く", fn:()=>{state.money+=20;state.hp-=5;next();}},
+          {text:"休む", fn:()=>{state.hp+=5;next();}}
+        ]
+      };
+    }
   }
 
   // ===== 描画 =====
   setImage(e.img);
-  eventDiv.innerText=e.text;
-  choicesDiv.innerHTML="";
+  eventEl.innerText = e.text;
+  choicesEl.innerHTML = "";
 
   e.choices.forEach(c=>{
-    const btn=document.createElement("button");
-    btn.innerText=c.text;
-    btn.onclick=c.fn;
-    choicesDiv.appendChild(btn);
+    const btn = document.createElement("button");
+    btn.innerText = c.text;
+    btn.onclick = c.fn;
+    choicesEl.appendChild(btn);
   });
 
   updateStatus();
